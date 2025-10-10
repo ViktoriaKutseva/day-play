@@ -11,13 +11,13 @@ class Task(SQLModel, table=True):
     completed: bool = Field(default=False)
     due_date: datetime | None = Field(default=None)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True, index=True)
-    
+
 class TaskCreate(SQLModel):
     task_name: str = Field(index=True)
     completed: bool = Field(default=False)
     due_date: datetime | None = Field(default=None)
 
-sqlite_name = "database.db" 
+sqlite_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_name}"
 
 connect_args = {"check_same_thread": False}
@@ -25,11 +25,11 @@ engine = create_engine(sqlite_url, connect_args=connect_args, echo=True)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
-    
+
 def get_session():
     with Session(engine) as session:
         yield session
-        
+
 SessionDep = Annotated[Session, Depends(get_session)]
 
 @asynccontextmanager
@@ -46,20 +46,19 @@ async def lifespan(app: FastAPI):
             )
             session.commit()
     yield
-    
+
 app = FastAPI(root_path="/api/v1", lifespan=lifespan)
 
 T = TypeVar('T')
 
 class Response(BaseModel, Generic[T]):
     data: T
-    
 
 @app.get("/")
 async def root():
     message = "Hello, World!"
     return {"message": message}
- 
+
 @app.get("/tasks", response_model=Response[list[Task]])
 async def read_tasks(session: SessionDep):
     tasks = session.exec(select(Task)).all()
