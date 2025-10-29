@@ -1,13 +1,69 @@
+# UV package manager
 uv.lock
 .python-version
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
 env/
+.venv
+venv/
+ENV/
+
 # Python-generated files
 __pycache__/
 *.py[oc]
+*.pyd
+*.pyo
+*.so
 build/
 dist/
 wheels/
 *.egg-info
+*.egg
 
-# Virtual environments
-.venv
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+src/data/*.db
+src/data/*.sqlite
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Logs
+*.log
+logs/
+*.out
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# MyPy type checker
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
+# Documentation builds
+docs/_build/
+site/
