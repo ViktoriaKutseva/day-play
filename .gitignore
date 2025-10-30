@@ -2,6 +2,9 @@
 uv.lock
 .python-version
 
+# Ignore docs
+docs/
+
 # Environment variables (contains secrets)
 .env
 .env.local
