@@ -5,11 +5,14 @@ description = "Personal project for gamified task management and FastAPI learnin
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiogram>=3.22.0",
     "fastapi>=0.118.2",
     "httpx>=0.28.1",
     "loguru>=0.7.3",
+    "pydantic-settings>=2.11.0",
     "python-dotenv>=1.2.1",
     "python-telegram-bot>=22.5",
+    "sqlalchemy>=2.0.44",
     "sqlmodel>=0.0.27",
     "telegram>=0.0.1",
     "uvicorn>=0.37.0",
