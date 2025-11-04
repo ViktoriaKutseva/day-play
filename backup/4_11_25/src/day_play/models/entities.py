@@ -26,3 +26,17 @@ class MessageEntity(BaseModel):
     
     class Config:
         from_attributes = True
+        
+class ToDoItemEntity(BaseModel):
+    """A to-do item"""
+    id: int | None = None
+    user_id: int = Field(..., gt=0)
+    title: str = Field(..., min_length=1)
+    description: str | None = None
+    is_completed: bool = False
+    score: int = 0
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    class Config:
+        from_attributes = True  

@@ -1,8 +1,10 @@
 # integrations/database/models.py - Database tables
 
+# integrations/database/models.py - Database tables
+
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
-from . import Base
+from .database import Base
 
 
 class User(Base):
@@ -26,3 +28,16 @@ class Message(Base):
     telegram_id = Column(Integer, nullable=False, index=True)
     text = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+class ToDoItem(Base):
+    """To-Do Item table in database"""
+    __tablename__ = "todo_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    is_completed = Column(Integer, default=0)  # 0 for False, 1 for True
+    score = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

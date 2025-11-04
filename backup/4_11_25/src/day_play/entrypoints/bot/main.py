@@ -7,7 +7,7 @@ from aiogram.enums import ParseMode
 
 from .handlers import router
 from ...config.settings import settings
-from ...integrations.database import init_db
+from ...integrations.database.database import init_db
 
 
 async def main():
