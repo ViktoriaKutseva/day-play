@@ -4,6 +4,7 @@ uv.lock
 
 # Ignore docs
 docs/
+example_docs/
 
 # Environment variables (contains secrets)
 .env
@@ -34,6 +35,9 @@ wheels/
 *.sqlite3
 src/data/*.db
 src/data/*.sqlite
+
+# Data directory (contains database and other persistent data)
+data/
 
 # IDE and editor files
 .vscode/
