@@ -43,6 +43,7 @@ class TestCalculateXP:
             task = Task(
                 title="Test Task",
                 description="A task for testing",
+                urgency=urgency,
                 priority=priority,
                 custom_xp=None
             )
@@ -183,6 +184,7 @@ class TestCalculateXP:
                 task = Task(
                     title="Test Task",
                     description="A task for testing",
+                    urgency=urgency,
                     priority=priority,
                     custom_xp=None
                 )
