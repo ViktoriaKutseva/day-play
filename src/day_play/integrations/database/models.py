@@ -1,6 +1,7 @@
 from datetime import date as date_type, datetime
 from typing import Any
 
+from pydantic import field_validator
 from sqlalchemy import Column, JSON
 from sqlmodel import Field, SQLModel
 
@@ -11,7 +12,7 @@ class Task(SQLModel, table=True):
     __tablename__ = "task"
 
     id: int | None = Field(default=None, primary_key=True)
-    title: str = Field(max_length=255)
+    title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
     priority: Priority = Field(default=Priority.MEDIUM)
     urgency: Urgency = Field(default=Urgency.MEDIUM)
@@ -24,6 +25,13 @@ class Task(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     completed_at: datetime | None = Field(default=None)
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Title cannot be empty or just whitespace.")
+        return value.strip()
 
 class User(SQLModel, table=True):
     __tablename__ = "user"
