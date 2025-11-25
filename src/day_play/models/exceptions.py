@@ -35,3 +35,10 @@ class PrizeNotFoundError(DomainException):
 class InsufficientXPAError(DomainException):
     """Raised when user doesn't have enough XP for an action."""
     pass
+
+class TaskAlreadyCompletedError(DomainException):
+    """Raised when trying to complete already completed task"""
+
+class TaskNotCompletedError(DomainException):
+    """Raised when trying to undo a task that is not completed."""
+    pass

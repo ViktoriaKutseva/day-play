@@ -15,6 +15,7 @@ class Task(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     due_date: datetime | None = None
     recurrence_pattern: RecurrencePattern = RecurrencePattern.NONE
+    recurrence_rule_on_complete: bool = False
     next_occurrence: datetime | None = None
     custom_xp: int | None = None
     created_at: datetime | None = None

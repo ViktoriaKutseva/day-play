@@ -21,4 +21,3 @@ class RecurrencePattern(str, Enum):
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
-    ON_COMPLETE = "on_complete"
