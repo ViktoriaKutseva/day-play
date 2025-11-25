@@ -67,6 +67,14 @@ class TaskRepository(Protocol):
             List of overdue tasks for the given user
         """
         ...
+    def get_by_user_id(self, user_id: int) -> list[Task]:
+        """Get all tasks for a given user.
+        Args:
+            user_id: ID of the user whose tasks to retrieve
+        Returns:
+            List of tasks for the given user
+        """
+        ...
 
 class DailyProgressRepository(Protocol):
     def create_or_update_progress(self, progress: DailyProgress) -> DailyProgress:
