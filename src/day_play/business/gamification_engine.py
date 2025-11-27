@@ -102,3 +102,7 @@ class GamificationEngine:
         current_level = self.calculate_level(current_xp)
         next_level_xp = self.xp_for_level(current_level + 1)
         return next_level_xp - current_xp
+
+
+game = GamificationEngine()
+print(game.xp_for_level(3))
