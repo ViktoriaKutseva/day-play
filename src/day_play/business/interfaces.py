@@ -75,7 +75,14 @@ class TaskRepository(Protocol):
             List of tasks for the given user
         """
         ...
-
+    def count_completed_tasks(self, user_id: int) -> int:
+        """Count the number of completed tasks for a given user.
+        Args:
+            user_id: ID of the user whose completed tasks to count
+        Returns:
+            Number of completed tasks for the given user
+        """
+        ...
 class DailyProgressRepository(Protocol):
     def create_or_update_progress(self, progress: DailyProgress) -> DailyProgress:
         """Create or update daily progress for a user.
@@ -103,6 +110,34 @@ class DailyProgressRepository(Protocol):
         Returns:
             List of DailyProgress entries for the given user within the date range
         """
+        ...
+
+class AllProgressRepository(Protocol):
+    """Interface for progress data access operations."""
+
+    def create(self, progress: DailyProgress) -> DailyProgress:
+        """Create a new progress entry."""
+        ...
+
+    def get_by_id(self, progress_id: int) -> DailyProgress | None:
+        """Get progress by ID."""
+        ...
+
+    def get_by_user_id_and_date(self, user_id: int, progress_date: date) -> DailyProgress | None:
+        """
+        Get progress for a user on a specific date.
+
+        Args:
+            user_id: User's unique identifier
+            progress_date: Date of the progress entry
+
+        Returns:
+            DailyProgress entry or None if not found
+        """
+        ...
+
+    def update(self, progress: DailyProgress) -> DailyProgress:
+        """Update existing daily progress entry."""
         ...
 
 class UserRepository(Protocol):
