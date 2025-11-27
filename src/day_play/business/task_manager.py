@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from loguru import logger
 
+from day_play.business.achievement_manager import AchievementManager
 from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.interfaces import (
     TaskRepository,
@@ -33,11 +34,13 @@ class TaskManager:
         user_repository: UserRepository,
         gamification: GamificationEngine,
         recurrence: RecurrenceEngine,
+        achievement_manager: 'AchievementManager',
     ) -> None:
         self._task_repository = task_repository
         self._user_repository = user_repository
         self._gamification = gamification
         self._recurrence = recurrence
+        self._achievement_manager = achievement_manager
 
     def create_task(self, task: Task) -> Task:
         """Creates a new task and handles any initial gamification logic."""
@@ -198,12 +201,13 @@ class TaskManager:
             task.status = TaskStatus.COMPLETED
             task.completed_at = datetime.now(UTC)
             task.updated_at = datetime.now(UTC)
-
+            task = self._task_repository.update_task(task)
             xp = self._gamification.calculate_xp(task)
             logger.debug("XP calculated", task_id=task_id, xp_earned=xp)
 
             user = self._user_repository.update_xp(user_id, xp)
             new_level = self._gamification.calculate_level(user.total_xp)
+            new_achievements = self._achievement_manager.check_and_unlock_achievements(user_id)
 
             if new_level > user.current_level:
                 logger.info(
@@ -224,7 +228,7 @@ class TaskManager:
                 user_level=new_level,
                 title=updated_task.title,
             )
-            return updated_task
+            return updated_task, new_achievements
         except (TaskNotFoundError, TaskAlreadyCompletedError):
             raise
         except Exception as e:
