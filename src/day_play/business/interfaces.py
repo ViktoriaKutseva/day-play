@@ -2,6 +2,7 @@ from datetime import date
 from typing import Protocol
 
 from day_play.models.entities import Achievement, DailyProgress, Prize, Task, User
+from day_play.models.enums import TaskStatus
 
 
 class TaskRepository(Protocol):
@@ -67,20 +68,22 @@ class TaskRepository(Protocol):
             List of overdue tasks for the given user
         """
         ...
-    def get_by_user_id(self, user_id: int) -> list[Task]:
-        """Get all tasks for a given user.
-        Args:
-            user_id: ID of the user whose tasks to retrieve
-        Returns:
-            List of tasks for the given user
-        """
-        ...
+
     def count_completed_tasks(self, user_id: int) -> int:
         """Count the number of completed tasks for a given user.
         Args:
             user_id: ID of the user whose completed tasks to count
         Returns:
             Number of completed tasks for the given user
+        """
+        ...
+    def find_by_status(self, user_id: int, status: TaskStatus) -> list[Task]:
+        """Find tasks by status for a given user.
+        Args:
+            user_id: ID of the user whose tasks to search
+            status: Status to filter tasks by
+        Returns:
+            List of tasks matching the given status for the user
         """
         ...
 class DailyProgressRepository(Protocol):
