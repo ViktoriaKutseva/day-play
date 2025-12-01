@@ -9,7 +9,7 @@ from day_play.business.interfaces import (
     UserRepository,
 )
 from day_play.business.recurrence_engine import RecurrenceEngine
-from day_play.models.entities import Task
+from day_play.models.entities import Achievement, Task
 from day_play.models.enums import RecurrencePattern, TaskStatus
 from day_play.models.exceptions import (
     TaskAlreadyCompletedError,
@@ -160,7 +160,7 @@ class TaskManager:
             )
             raise
 
-    def complete_task(self, task_id: int, user_id: int) -> Task:
+    def complete_task(self, task_id: int, user_id: int) -> tuple[Task, list[Achievement]]:
         """
         Mark a pending task as completed and award XP.
 
@@ -170,17 +170,23 @@ class TaskManager:
         - XP is calculated and awarded to user
         - User level is recalculated (may increase)
         - Next occurrence is calculated for recurring tasks
+        - Achievements are checked and unlocked
 
         Args:
             task_id: ID of task to complete
             user_id: ID of user completing the task
 
         Returns:
-            Task with completed status
+            Tuple of (completed Task, list of newly unlocked Achievements)
 
         Raises:
             TaskNotFoundError: If task doesn't exist
             TaskAlreadyCompletedError: If task is already completed
+            
+        Example:
+            >>> task, achievements = manager.complete_task(task_id=1, user_id=1)
+            >>> for ach in achievements:
+            ...     print(f"Achievement unlocked: {ach.name}")
         """
         logger.info("Completing task", task_id=task_id, user_id=user_id)
 
