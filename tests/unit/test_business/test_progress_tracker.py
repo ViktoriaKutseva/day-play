@@ -216,3 +216,57 @@ class TestProgressTracker:
         result = progress_tracker.get_simple_history(user_id=1)
         assert result == []
         assert len(result) == 0
+
+    # ----------------- Additional edge-case tests -----------------
+    def test_calculate_overall_progression_user_not_found_returns_zero(self, progress_tracker, mock_user_repository):
+        mock_user_repository.get_by_id.return_value = None
+        result = progress_tracker.calculate_overall_progression(user_id=1)
+        assert result == 0.0
+
+    def test_calculate_daily_streak_no_progress_returns_zero(self, progress_tracker, mock_daily_progress_repository):
+        mock_daily_progress_repository.get_progress_by_date.return_value = None
+        result = progress_tracker.calculate_daily_streak(user_id=1)
+        assert result == 0
+
+    def test_calculate_daily_streak_breaks_at_gap(self, progress_tracker, mock_daily_progress_repository):
+        today = date.today()
+        progress_data = [
+            DailyProgress(user_id=1, date=today, tasks_completed=5, tasks_total=5, daily_xp_earned=50, completion_percentage=100.0),
+            DailyProgress(user_id=1, date=today - timedelta(days=1), tasks_completed=3, tasks_total=5, daily_xp_earned=30, completion_percentage=60.0),
+            # gap day: no entry for today-2
+            DailyProgress(user_id=1, date=today - timedelta(days=3), tasks_completed=4, tasks_total=5, daily_xp_earned=40, completion_percentage=80.0),
+        ]
+
+        def get_progress_side_effect(user_id, check_date):
+            return next((p for p in progress_data if p.date == check_date), None)
+
+        mock_daily_progress_repository.get_progress_by_date.side_effect = get_progress_side_effect
+        result = progress_tracker.calculate_daily_streak(user_id=1)
+        assert result == 2
+
+    def test_calculate_daily_streak_breaks_at_zero_completion(self, progress_tracker, mock_daily_progress_repository):
+        today = date.today()
+        progress_data = [
+            DailyProgress(user_id=1, date=today, tasks_completed=5, tasks_total=5, daily_xp_earned=50, completion_percentage=100.0),
+            DailyProgress(user_id=1, date=today - timedelta(days=1), tasks_completed=0, tasks_total=5, daily_xp_earned=0, completion_percentage=0.0),
+        ]
+
+        def get_progress_side_effect(user_id, check_date):
+            return next((p for p in progress_data if p.date == check_date), None)
+
+        mock_daily_progress_repository.get_progress_by_date.side_effect = get_progress_side_effect
+        result = progress_tracker.calculate_daily_streak(user_id=1)
+        assert result == 1
+
+    def test_calculate_daily_streak_old_tasks_dont_count(self, progress_tracker, mock_daily_progress_repository):
+        today = date.today()
+        progress_data = [
+            DailyProgress(user_id=1, date=today - timedelta(days=30), tasks_completed=5, tasks_total=5, daily_xp_earned=50, completion_percentage=100.0),
+        ]
+
+        def get_progress_side_effect(user_id, check_date):
+            return next((p for p in progress_data if p.date == check_date), None)
+
+        mock_daily_progress_repository.get_progress_by_date.side_effect = get_progress_side_effect
+        result = progress_tracker.calculate_daily_streak(user_id=1)
+        assert result == 0
