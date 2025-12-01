@@ -6,6 +6,7 @@ import pytest
 from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.recurrence_engine import RecurrenceEngine
 from day_play.business.task_manager import TaskManager
+from day_play.business.achievement_manager import AchievementManager
 from day_play.models.entities import Task, User
 from day_play.models.enums import Priority, RecurrencePattern, TaskStatus, Urgency
 from day_play.models.exceptions import (
@@ -26,6 +27,16 @@ def mock_user_repository() -> Mock:
 
 
 @pytest.fixture
+def mock_achievement_repository() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def mock_daily_progress_repository() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
 def gamification_engine() -> GamificationEngine:
     return GamificationEngine()
 
@@ -36,17 +47,43 @@ def recurrence_engine() -> RecurrenceEngine:
 
 
 @pytest.fixture
+def mock_progress_tracker() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def achievement_manager(
+    gamification_engine: GamificationEngine,
+    mock_task_repository: Mock,
+    mock_user_repository: Mock,
+    mock_daily_progress_repository: Mock,
+    mock_achievement_repository: Mock,
+    mock_progress_tracker: Mock,
+) -> AchievementManager:
+    return AchievementManager(
+        gamification=gamification_engine,
+        task_repository=mock_task_repository,
+        user_repository=mock_user_repository,
+        daily_progress_repository=mock_daily_progress_repository,
+        achievement_repository=mock_achievement_repository,
+        progress_tracker=mock_progress_tracker,
+    )
+
+
+@pytest.fixture
 def task_manager(
     mock_task_repository: Mock,
     mock_user_repository: Mock,
     gamification_engine: GamificationEngine,
     recurrence_engine: RecurrenceEngine,
+    achievement_manager: AchievementManager,
 ) -> TaskManager:
     return TaskManager(
         task_repository=mock_task_repository,
         user_repository=mock_user_repository,
         gamification=gamification_engine,
         recurrence=recurrence_engine,
+        achievement_manager=achievement_manager,
     )
 
 
@@ -235,7 +272,7 @@ class TestTaskManagerUpdateTask:
         )
         mock_task_repository.get_task_by_id.return_value = existing_task
         mock_task_repository.update_task.return_value = updated_task
-        result = task_manager.update_task(updated_task)
+        task_manager.update_task(updated_task)
 
         mock_task_repository.update_task.assert_called_once()
 
@@ -313,11 +350,15 @@ class TestTaskManagerCompleteTask:
         mock_task_repository.update_task.return_value = task.model_copy(
             update={"status": TaskStatus.COMPLETED}
         )
-        result = task_manager.complete_task(task.id, user.id)
-        assert result.status == TaskStatus.COMPLETED
+        completed_task, achievements = task_manager.complete_task(task.id, user.id)
+        assert completed_task.status == TaskStatus.COMPLETED
+        assert isinstance(achievements, list)
         mock_user_repository.update_xp.assert_called_once_with(user.id, 50)
         mock_task_repository.get_task_by_id.assert_called_once_with(task.id)
-        mock_task_repository.update_task.assert_called_once()
+        # update_task is called twice: once to complete, once for recurrence
+        assert mock_task_repository.update_task.call_count == 2
+        # Level should not update since 50 XP is not enough for level 2 (requires 100 XP)
+        mock_user_repository.update_level.assert_not_called()
 
     def test_complete_task_updates_level_when_threshold_crossed(
         self, task_manager, mock_task_repository, mock_user_repository
@@ -331,17 +372,21 @@ class TestTaskManagerCompleteTask:
             user_id=1,
         )
         user = User(id=1, username="testuser", current_level=1, total_xp=90)
-        updated_user = User(id=1, username="testuser", current_level=2, total_xp=140)
-        mock_user_repository.update_xp.return_value = updated_user
+        user = User(id=1, username="testuser", current_level=1, total_xp=0)
+        mock_user_repository.update_xp.return_value = user
         mock_task_repository.get_task_by_id.return_value = task
         mock_task_repository.update_task.return_value = task.model_copy(
             update={"status": TaskStatus.COMPLETED}
         )
-        result = task_manager.complete_task(task.id, user.id)
-        assert result.status == TaskStatus.COMPLETED
+        completed_task, achievements = task_manager.complete_task(task.id, user.id)
+        assert completed_task.status == TaskStatus.COMPLETED
+        assert isinstance(achievements, list)
         mock_user_repository.update_xp.assert_called_once_with(user.id, 50)
         mock_task_repository.get_task_by_id.assert_called_once_with(task.id)
-        mock_task_repository.update_task.assert_called_once()
+        # update_task is called twice: once to complete, once for recurrence
+        assert mock_task_repository.update_task.call_count == 2
+        # Level should not update since 50 XP is not enough for level 2 (requires 100 XP)
+        mock_user_repository.update_level.assert_not_called()
 
     def test_complete_task_calculates_next_occurrence_for_recurring(
         self, task_manager, mock_task_repository, mock_user_repository
@@ -361,10 +406,12 @@ class TestTaskManagerCompleteTask:
             update={"status": TaskStatus.COMPLETED}
         )
         mock_user_repository.update_xp.return_value = user
-        result = task_manager.complete_task(task.id, task.user_id)
-        assert result.status == TaskStatus.COMPLETED
+        completed_task, achievements = task_manager.complete_task(task.id, task.user_id)
+        assert completed_task.status == TaskStatus.COMPLETED
+        assert isinstance(achievements, list)
         mock_task_repository.get_task_by_id.assert_called_once_with(task.id)
-        mock_task_repository.update_task.assert_called_once()
+        # update_task is called twice: once to complete, once for recurrence
+        assert mock_task_repository.update_task.call_count == 2
 
         called_task = mock_task_repository.update_task.call_args[0][0]
         assert called_task.next_occurrence is not None
@@ -636,3 +683,56 @@ class TestTaskManagerGetTasksForToday:
         assert len(result) == 0
         assert result == []
         mock_task_repository.get_tasks_for_today.assert_called_once_with(1)
+
+
+class TestTaskManagerRepositoryExceptions:
+    """Repository exception propagation tests for TaskManager public methods."""
+
+    def test_create_task_repository_exception_propagates(self, task_manager, mock_task_repository, sample_task):
+        mock_task_repository.create_task.side_effect = Exception("Database error")
+        sample_task.id = None
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.create_task(sample_task)
+
+    def test_get_task_repository_exception_propagates(self, task_manager, mock_task_repository):
+        mock_task_repository.get_task_by_id.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.get_task(1)
+
+    def test_update_task_repository_exception_propagates(self, task_manager, mock_task_repository):
+        existing_task = Task(id=1, title="Task", description="desc", priority=Priority.HIGH, urgency=Urgency.HIGH, user_id=1)
+        mock_task_repository.get_task_by_id.return_value = existing_task
+        mock_task_repository.update_task.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.update_task(existing_task)
+
+    def test_delete_task_repository_exception_propagates(self, task_manager, mock_task_repository):
+        task_to_delete = Task(id=1, title="Task", description="desc", priority=Priority.HIGH, urgency=Urgency.HIGH, user_id=1)
+        mock_task_repository.get_task_by_id.return_value = task_to_delete
+        mock_task_repository.delete_task.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.delete_task(1)
+
+    def test_complete_task_repository_exception_propagates(self, task_manager, mock_task_repository, mock_user_repository):
+        task = Task(id=1, title="Task", description="desc", priority=Priority.HIGH, urgency=Urgency.HIGH, user_id=1)
+        mock_task_repository.get_task_by_id.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.complete_task(task.id, task.user_id)
+
+    def test_undo_task_repository_exception_propagates(self, task_manager, mock_task_repository, mock_user_repository):
+        completed_task = Task(id=1, title="Task", description="desc", priority=Priority.HIGH, urgency=Urgency.HIGH, status=TaskStatus.COMPLETED, user_id=1)
+        mock_task_repository.get_task_by_id.return_value = completed_task
+        # The undo flow calls update_xp before update_task; raise on update_xp to simulate repo failure
+        mock_user_repository.update_xp.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.undo_task(completed_task.id, completed_task.user_id)
+
+    def test_get_tasks_repository_exception_propagates(self, task_manager, mock_task_repository):
+        mock_task_repository.get_by_user_id.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.get_tasks(user_id=1)
+
+    def test_get_tasks_for_today_repository_exception_propagates(self, task_manager, mock_task_repository):
+        mock_task_repository.get_tasks_for_today.side_effect = Exception("Database error")
+        with pytest.raises(Exception, match="Database error"):
+            task_manager.get_tasks_for_today(user_id=1)
