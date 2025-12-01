@@ -1,4 +1,4 @@
-from datetime import date as date_type, datetime
+from datetime import date as date_type, datetime, timezone
 from typing import Any
 
 from pydantic import field_validator
@@ -21,8 +21,9 @@ class Task(SQLModel, table=True):
     recurrence_pattern: RecurrencePattern = Field(default=RecurrencePattern.NONE)
     next_occurrence: datetime | None = Field(default=None)
     custom_xp: int | None = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    recurrence_rule_on_complete: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: datetime | None = Field(default=None)
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
 
@@ -40,8 +41,8 @@ class User(SQLModel, table=True):
     username: str | None = Field(default=None, max_length=150, unique=True, index=True)
     current_level: int = Field(default=1)
     total_xp: int = Field(default=0)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class DailyProgress(SQLModel, table=True):
     __tablename__ = "daily_progress"
@@ -63,7 +64,7 @@ class Achievement(SQLModel, table=True):
     unlock_criteria: dict[str, Any] = Field(sa_column=Column(JSON))
     unlocked_at: datetime | None = Field(default=None)
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Prize(SQLModel, table=True):
     __tablename__ = "prize"
