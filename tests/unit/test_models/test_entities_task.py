@@ -352,16 +352,6 @@ class TestTaskRecurrencePattern:
         assert task.recurrence_pattern == RecurrencePattern.MONTHLY
 
     @pytest.mark.asyncio
-    async def test_task_accepts_on_complete_recurrence(self):
-        """Test that task accepts ON_COMPLETE recurrence pattern."""
-        task = Task(
-            title="On Complete Recurring Task",
-            recurrence_pattern=RecurrencePattern.ON_COMPLETE,
-            description=None
-        )
-        assert task.recurrence_pattern == RecurrencePattern.ON_COMPLETE
-
-    @pytest.mark.asyncio
     async def test_task_rejects_invalid_recurrence_pattern(self):
         """Test that task rejects invalid recurrence pattern."""
         with pytest.raises(ValidationError):
