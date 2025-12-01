@@ -32,13 +32,26 @@ class PrizeNotFoundError(DomainException):
     """Raised when a prize is not found."""
     pass
 
-class InsufficientXPAError(DomainException):
-    """Raised when user doesn't have enough XP for an action."""
-    pass
-
 class TaskAlreadyCompletedError(DomainException):
     """Raised when trying to complete already completed task"""
 
 class TaskNotCompletedError(DomainException):
     """Raised when trying to undo a task that is not completed."""
+    pass
+
+class InsufficientXPError(DomainException):
+    """Raised when user doesn't have enough XP to unlock a prize milestone."""
+    pass
+
+# Backwards-compatible alias (older tests expect InsufficientXPAError)
+class InsufficientXPAError(InsufficientXPError):
+    """Alias for InsufficientXPError for compatibility."""
+    pass
+
+class PrizeAlreadyRedeemedError(DomainException):
+    """Raised when attempting to redeem a prize that has already been redeemed."""
+    pass
+
+class UserNotFoundError(DomainException):
+    """Raised when a user is not found."""
     pass
