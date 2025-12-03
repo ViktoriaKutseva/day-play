@@ -115,33 +115,33 @@ class DailyProgressRepository(Protocol):
         """
         ...
 
-class AllProgressRepository(Protocol):
-    """Interface for progress data access operations."""
+# class AllProgressRepository(Protocol):
+#     """Interface for progress data access operations."""
 
-    def create(self, progress: DailyProgress) -> DailyProgress:
-        """Create a new progress entry."""
-        ...
+#     def create(self, progress: DailyProgress) -> DailyProgress:
+#         """Create a new progress entry."""
+#         ...
 
-    def get_by_id(self, progress_id: int) -> DailyProgress | None:
-        """Get progress by ID."""
-        ...
+#     def get_by_id(self, progress_id: int) -> DailyProgress | None:
+#         """Get progress by ID."""
+#         ...
 
-    def get_by_user_id_and_date(self, user_id: int, progress_date: date) -> DailyProgress | None:
-        """
-        Get progress for a user on a specific date.
+#     def get_by_user_id_and_date(self, user_id: int, progress_date: date) -> DailyProgress | None:
+#         """
+#         Get progress for a user on a specific date.
 
-        Args:
-            user_id: User's unique identifier
-            progress_date: Date of the progress entry
+#         Args:
+#             user_id: User's unique identifier
+#             progress_date: Date of the progress entry
 
-        Returns:
-            DailyProgress entry or None if not found
-        """
-        ...
+#         Returns:
+#             DailyProgress entry or None if not found
+#         """
+#         ...
 
-    def update(self, progress: DailyProgress) -> DailyProgress:
-        """Update existing daily progress entry."""
-        ...
+#     def update(self, progress: DailyProgress) -> DailyProgress:
+#         """Update existing daily progress entry."""
+#         ...
 
 class UserRepository(Protocol):
     """Interface for user data access operations."""
@@ -211,6 +211,16 @@ class AchievementRepository(Protocol):
         """
         ...
 
+    def update(self, achievement: Achievement) -> Achievement:
+        """Update existing achievement."""
+        ... 
+
+    def delete(self, achievement_id: int) -> None:
+        """Delete an achievement by its ID.
+        Args:
+            achievement_id: ID of the achievement to delete
+        """
+        ...
 class PrizeRepository(Protocol):
     """Interface for prize data access operations."""
 
@@ -252,4 +262,11 @@ class PrizeRepository(Protocol):
 
     def update(self, prize: Prize) -> Prize:
         """Update existing prize."""
+        ...
+
+    def delete(self, prize_id: int) -> None:
+        """Delete a prize by its ID.
+        Args:
+            prize_id: ID of the prize to delete
+        """
         ...

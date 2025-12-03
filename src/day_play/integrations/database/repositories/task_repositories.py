@@ -252,7 +252,3 @@ class SQLAlchemyTaskRepository:
             orm_tasks = session.execute(stmt).scalars().all()
             return [self._to_domain(orm_task) for orm_task in orm_tasks]
 
-# class SQLAlchemyUserRepository:
-#     """SQLAlchemy implementation of UserRepository protocol."""
-#     def __init__(self, session_factory: Callable[[], Session]):
-#         self._session_factory = session_factory

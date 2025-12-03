@@ -1,9 +1,3 @@
-"""Unit tests for AchievementManager service.
-
-Tests achievement unlocking logic, criteria checking, and integration
-with repositories. All external dependencies are mocked.
-"""
-
 from datetime import UTC, datetime
 from unittest.mock import Mock
 
