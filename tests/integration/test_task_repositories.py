@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from faker import Faker
 
-from day_play.integrations.database.repositories.task_repositories import (
+from day_play.integrations.database.repositories.task_repository import (
     SQLAlchemyTaskRepository,
 )
 from day_play.models.entities import Task
@@ -14,7 +14,6 @@ from day_play.models.exceptions import TaskNotFoundError
 
 @pytest.fixture
 def task_repository(in_memory_db):
-    """Create repository instance with in-memory database."""
     return SQLAlchemyTaskRepository(in_memory_db)
 
 def sample_tasks(number: int = 1):

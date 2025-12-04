@@ -9,8 +9,8 @@ from day_play.models.entities import DailyProgress as DomainDailyProgress
 
 
 class SQLAlchemyDailyProgressRepository:
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, session: Session):
+        self._session = session
 
     @staticmethod
     def _to_domain(orm_daily_progress: DailyProgressORM) -> DomainDailyProgress:
@@ -42,25 +42,24 @@ class SQLAlchemyDailyProgressRepository:
         Returns:
             Created or updated DailyProgress
         """
-        with self._session_factory() as session:
-            stmt = select(DailyProgressORM).where(
-                DailyProgressORM.user_id == progress.user_id,
-                DailyProgressORM.date == progress.date,
-            )
-            orm_progress = session.execute(stmt).scalar_one_or_none()
-            if orm_progress:
-                # Update existing record
-                orm_progress.tasks_completed = progress.tasks_completed
-                orm_progress.tasks_total = progress.tasks_total
-                orm_progress.completion_percentage = progress.completion_percentage
-                orm_progress.daily_xp_earned = progress.daily_xp_earned
-            else:
-                # Create new record
-                orm_progress = self._to_orm(progress)
-                session.add(orm_progress)
-            session.commit()
-            session.refresh(orm_progress)
-            return self._to_domain(orm_progress)
+        stmt = select(DailyProgressORM).where(
+            DailyProgressORM.user_id == progress.user_id,
+            DailyProgressORM.date == progress.date,
+        )
+        orm_progress = self._session.execute(stmt).scalar_one_or_none()
+        if orm_progress:
+            # Update existing record
+            orm_progress.tasks_completed = progress.tasks_completed
+            orm_progress.tasks_total = progress.tasks_total
+            orm_progress.completion_percentage = progress.completion_percentage
+            orm_progress.daily_xp_earned = progress.daily_xp_earned
+        else:
+            # Create new record
+            orm_progress = self._to_orm(progress)
+            self._session.add(orm_progress)
+        self._session.commit()
+        self._session.refresh(orm_progress)
+        return self._to_domain(orm_progress)
     def get_progress_by_date(self, user_id: int, date_progress: date) -> DomainDailyProgress | None:
         """Retrieve daily progress for a user by date.
         Args:
@@ -69,15 +68,14 @@ class SQLAlchemyDailyProgressRepository:
         Returns:
             DailyProgress for the given user and date, or None if not found
         """
-        with self._session_factory() as session:
-            stmt = select(DailyProgressORM).where(
-                DailyProgressORM.user_id == user_id,
-                DailyProgressORM.date == date_progress,
-            )
-            orm_progress = session.execute(stmt).scalar_one_or_none()
-            if orm_progress is None:
-                return None
-            return self._to_domain(orm_progress)
+        stmt = select(DailyProgressORM).where(
+            DailyProgressORM.user_id == user_id,
+            DailyProgressORM.date == date_progress,
+        )
+        orm_progress = self._session.execute(stmt).scalar_one_or_none()
+        if orm_progress is None:
+            return None
+        return self._to_domain(orm_progress)
     def get_date_range(self, user_id: int, start_date: date, end_date: date) -> list[DomainDailyProgress]:
         """Retrieve daily progress for a user within a date range.
         Args:
@@ -87,11 +85,10 @@ class SQLAlchemyDailyProgressRepository:
         Returns:
             List of DailyProgress entries for the given user within the date range
         """
-        with self._session_factory() as session:
-            stmt = select(DailyProgressORM).where(
-                DailyProgressORM.user_id == user_id,
-                DailyProgressORM.date >= start_date,
-                DailyProgressORM.date <= end_date,
-            )
-            orm_progress_list = session.execute(stmt).scalars().all()
-            return [self._to_domain(orm_progress) for orm_progress in orm_progress_list]
+        stmt = select(DailyProgressORM).where(
+            DailyProgressORM.user_id == user_id,
+            DailyProgressORM.date >= start_date,
+            DailyProgressORM.date <= end_date,
+        )
+        orm_progress_list = self._session.execute(stmt).scalars().all()
+        return [self._to_domain(orm_progress) for orm_progress in orm_progress_list]

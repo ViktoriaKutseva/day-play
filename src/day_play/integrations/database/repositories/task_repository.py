@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select
@@ -16,8 +15,8 @@ from day_play.models.exceptions import TaskNotFoundError
 
 class SQLAlchemyTaskRepository:
     """SQLAlchemy implementation of TaskRepository protocol."""
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, session: Session):
+        self._session = session
 
     @staticmethod
     def _to_domain(orm_task: TaskORM) -> DomainTask:
@@ -61,19 +60,17 @@ class SQLAlchemyTaskRepository:
         )
 
     def create_task(self, task: DomainTask) -> DomainTask:
-        with self._session_factory() as session:
-            orm_task = self._to_orm(task)
-            session.add(orm_task)
-            session.commit()
-            session.refresh(orm_task)
-            return self._to_domain(orm_task)
+        orm_task = self._to_orm(task)
+        self._session.add(orm_task)
+        self._session.commit()
+        self._session.refresh(orm_task)
+        return self._to_domain(orm_task)
 
     def get_task_by_id(self, task_id: int) -> DomainTask | None:
-        with self._session_factory() as session:
-            orm_task = session.get(TaskORM, task_id)
-            if orm_task is None:
-                return None
-            return self._to_domain(orm_task)
+        orm_task = self._session.get(TaskORM, task_id)
+        if orm_task is None:
+            return None
+        return self._to_domain(orm_task)
 
     def update_task(self, task: DomainTask) -> DomainTask:
         """
@@ -98,29 +95,28 @@ class SQLAlchemyTaskRepository:
         if task.id is None:
             raise ValueError("Cannot update task without ID")
 
-        with self._session_factory() as session:
-            orm_task = session.get(TaskORM, task.id)
+        orm_task = self._session.get(TaskORM, task.id)
 
-            if orm_task is None:
-                raise TaskNotFoundError(f"Task with ID {task.id} not found")
+        if orm_task is None:
+            raise TaskNotFoundError(f"Task with ID {task.id} not found")
 
-            orm_task.title = task.title
-            orm_task.description = task.description
-            orm_task.priority = task.priority
-            orm_task.urgency = task.urgency
-            orm_task.status = task.status
-            orm_task.due_date = task.due_date
-            orm_task.recurrence_pattern = task.recurrence_pattern
-            orm_task.next_occurrence = task.next_occurrence
-            orm_task.recurrence_rule_on_complete = task.recurrence_rule_on_complete
-            orm_task.custom_xp = task.custom_xp
-            orm_task.completed_at = task.completed_at
-            orm_task.updated_at = datetime.now(timezone.utc)  # Always update timestamp
+        orm_task.title = task.title
+        orm_task.description = task.description
+        orm_task.priority = task.priority
+        orm_task.urgency = task.urgency
+        orm_task.status = task.status
+        orm_task.due_date = task.due_date
+        orm_task.recurrence_pattern = task.recurrence_pattern
+        orm_task.next_occurrence = task.next_occurrence
+        orm_task.recurrence_rule_on_complete = task.recurrence_rule_on_complete
+        orm_task.custom_xp = task.custom_xp
+        orm_task.completed_at = task.completed_at
+        orm_task.updated_at = datetime.now(timezone.utc)  # Always update timestamp
 
-            session.commit()
+        self._session.commit()
 
-            session.refresh(orm_task)
-            return self._to_domain(orm_task)
+        self._session.refresh(orm_task)
+        return self._to_domain(orm_task)
 
     def delete_task(self, task_id: int) -> None:
         """
@@ -137,14 +133,12 @@ class SQLAlchemyTaskRepository:
         Raises:
             ValueError: If task not found
         """
-        with self._session_factory() as session:
-            orm_task = session.get(TaskORM, task_id)
+        orm_task = self._session.get(TaskORM, task_id)
 
-            if orm_task is None:
-                raise TaskNotFoundError(f"Task with ID {task_id} not found")
-
-            session.delete(orm_task)
-            session.commit()
+        if orm_task is None:
+            raise TaskNotFoundError(f"Task with ID {task_id} not found")
+        self._session.delete(orm_task)
+        self._session.commit()
 
     def list_tasks(self, user_id: int) -> list[DomainTask]:
         """
@@ -156,12 +150,10 @@ class SQLAlchemyTaskRepository:
         Returns:
             List of all tasks for the user
         """
-        with self._session_factory() as session:
-            stmt = select(TaskORM).where(TaskORM.user_id == user_id)  # type: ignore[arg-type]
-            orm_tasks = session.execute(stmt).scalars().all()
+        stmt = select(TaskORM).where(TaskORM.user_id == user_id)  # type: ignore[arg-type]
+        orm_tasks = self._session.execute(stmt).scalars().all()
 
-            return [self._to_domain(orm_task) for orm_task in orm_tasks]
-
+        return [self._to_domain(orm_task) for orm_task in orm_tasks]
     def get_tasks_for_today(self, user_id: int) -> list[DomainTask]:
         """
         Get tasks due today or with no due date for a user.
@@ -177,25 +169,24 @@ class SQLAlchemyTaskRepository:
         Returns:
             List of today's tasks
         """
-        with self._session_factory() as session:
-            today = datetime.now(timezone.utc).date()
-            today_start = datetime.combine(today, datetime.min.time())
-            today_end = datetime.combine(today, datetime.max.time())
+        today = datetime.now(timezone.utc).date()
+        today_start = datetime.combine(today, datetime.min.time())
+        today_end = datetime.combine(today, datetime.max.time())
 
-            stmt = select(TaskORM).where(
-                TaskORM.user_id == user_id,  # type: ignore[arg-type]
-                TaskORM.status != TaskStatus.COMPLETED,  # type: ignore[arg-type]
-                (
-                    (TaskORM.due_date.is_(None))  # type: ignore[union-attr]
-                    | (
-                        (TaskORM.due_date >= today_start)  # type: ignore[operator]
-                        & (TaskORM.due_date <= today_end)  # type: ignore[operator]
-                    )
-                ),
-            )
-            orm_tasks = session.execute(stmt).scalars().all()
+        stmt = select(TaskORM).where(
+            TaskORM.user_id == user_id,  # type: ignore[arg-type]
+            TaskORM.status != TaskStatus.COMPLETED,  # type: ignore[arg-type]
+            (
+                (TaskORM.due_date.is_(None))  # type: ignore[union-attr]
+                | (
+                    (TaskORM.due_date >= today_start)  # type: ignore[operator]
+                    & (TaskORM.due_date <= today_end)  # type: ignore[operator]
+                )
+            ),
+        )
+        orm_tasks = self._session.execute(stmt).scalars().all()
 
-            return [self._to_domain(orm_task) for orm_task in orm_tasks]
+        return [self._to_domain(orm_task) for orm_task in orm_tasks]
 
     def get_overdue_tasks(self, user_id: int) -> list[DomainTask]:
         """
@@ -207,18 +198,17 @@ class SQLAlchemyTaskRepository:
         Returns:
             List of overdue tasks
         """
-        with self._session_factory() as session:
-            now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)
 
-            # Query overdue tasks
-            stmt = select(TaskORM).where(
-                TaskORM.user_id == user_id,  # type: ignore[arg-type]
-                TaskORM.status != TaskStatus.COMPLETED,  # type: ignore[arg-type]
-                TaskORM.due_date < now,  # Past due date  # type: ignore[operator]
-            )
-            orm_tasks = session.execute(stmt).scalars().all()
+        # Query overdue tasks
+        stmt = select(TaskORM).where(
+            TaskORM.user_id == user_id,  # type: ignore[arg-type]
+            TaskORM.status != TaskStatus.COMPLETED,  # type: ignore[arg-type]
+            TaskORM.due_date < now,  # Past due date  # type: ignore[operator]
+        )
+        orm_tasks = self._session.execute(stmt).scalars().all()
 
-            return [self._to_domain(orm_task) for orm_task in orm_tasks]
+        return [self._to_domain(orm_task) for orm_task in orm_tasks]
 
     def count_completed_tasks(self, user_id: int) -> int:
         """
@@ -230,25 +220,22 @@ class SQLAlchemyTaskRepository:
         Returns:
             Number of completed tasks
         """
-        with self._session_factory() as session:
-            stmt = (
-                select(func.count())
-                .select_from(TaskORM)
-                .where(
-                    TaskORM.user_id == user_id,  # type: ignore[arg-type]
-                    TaskORM.status == TaskStatus.COMPLETED,  # type: ignore[arg-type]
-                )
+        stmt = (
+            select(func.count())
+            .select_from(TaskORM)
+            .where(
+                TaskORM.user_id == user_id,  # type: ignore[arg-type]
+                TaskORM.status == TaskStatus.COMPLETED,  # type: ignore[arg-type]
             )
-            count = session.execute(stmt).scalar()
-
-            return count or 0
+        )
+        count = self._session.execute(stmt).scalar()
+        return count or 0
 
     def find_by_status(self, user_id: int, status: TaskStatus) -> list[DomainTask]:
-        with self._session_factory() as session:
-            stmt = select(TaskORM).where(
-                TaskORM.user_id == user_id,  # type: ignore[arg-type]
-                TaskORM.status == status,  # type: ignore[arg-type]
-            )
-            orm_tasks = session.execute(stmt).scalars().all()
-            return [self._to_domain(orm_task) for orm_task in orm_tasks]
+        stmt = select(TaskORM).where(
+            TaskORM.user_id == user_id,  # type: ignore[arg-type]
+            TaskORM.status == status,  # type: ignore[arg-type]
+        )
+        orm_tasks = self._session.execute(stmt).scalars().all()
+        return [self._to_domain(orm_task) for orm_task in orm_tasks]
 

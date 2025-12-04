@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from faker import Faker
 
-from day_play.integrations.database.repositories.user_repositories import (
+from day_play.integrations.database.repositories.user_repository import (
     SQLAlchemyUserRepository,
 )
 from day_play.models.entities import User

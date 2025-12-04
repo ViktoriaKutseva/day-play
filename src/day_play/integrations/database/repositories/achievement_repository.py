@@ -9,8 +9,8 @@ from day_play.models.exceptions import AchievementNotFoundError
 
 
 class SQLAlchemyAchievementRepository:
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, session: Session):
+        self._session = session
 
     @staticmethod
     def _to_domain(orm_achievement: AchievementORM) -> DomainAchievement:
@@ -39,28 +39,25 @@ class SQLAlchemyAchievementRepository:
 
     def create(self, achievement: DomainAchievement) -> DomainAchievement:
         """Create a new achievement."""
-        with self._session_factory() as session:
-            orm_achievement = self._to_orm(achievement)
-            session.add(orm_achievement)
-            session.commit()
-            session.refresh(orm_achievement)
-            return self._to_domain(orm_achievement)
+        orm_achievement = self._to_orm(achievement)
+        self._session.add(orm_achievement)
+        self._session.commit()
+        self._session.refresh(orm_achievement)
+        return self._to_domain(orm_achievement)
 
     def get_by_id(self, achievement_id: int) -> DomainAchievement | None:
         """Get achievement by ID."""
-        with self._session_factory() as session:
-            orm_achievement = session.get(AchievementORM, achievement_id)
-            if orm_achievement is None:
-                return None
-            return self._to_domain(orm_achievement)
+        orm_achievement = self._session.get(AchievementORM, achievement_id)
+        if orm_achievement is None:
+            return None
+        return self._to_domain(orm_achievement)
 
     def get_by_user_id(self, user_id: int) -> list[DomainAchievement]:
         """Get all achievements for a user."""
 
-        with self._session_factory() as session:
-            stmt = select(AchievementORM).where(AchievementORM.user_id == user_id)
-            orm_achievements = session.execute(stmt).scalars().all()
-            return [self._to_domain(orm_achievement) for orm_achievement in orm_achievements]
+        stmt = select(AchievementORM).where(AchievementORM.user_id == user_id)
+        orm_achievements = self._session.execute(stmt).scalars().all()
+        return [self._to_domain(orm_achievement) for orm_achievement in orm_achievements]
     def get_unlocked(self, user_id: int) -> list[DomainAchievement]:
         """
         Get unlocked achievements for a user.
@@ -71,33 +68,30 @@ class SQLAlchemyAchievementRepository:
         Returns:
             List of unlocked achievements
         """
-        with self._session_factory() as session:
-            stmt = select(AchievementORM).where(
-                AchievementORM.user_id == user_id,
-                AchievementORM.unlocked_at.isnot(None))  # type: ignore[union-attr]
-            orm_achievements = session.execute(stmt).scalars().all()
-            return [self._to_domain(orm_achievement) for orm_achievement in orm_achievements]
+        stmt = select(AchievementORM).where(
+            AchievementORM.user_id == user_id,
+            AchievementORM.unlocked_at.isnot(None))  # type: ignore[union-attr]
+        orm_achievements = self._session.execute(stmt).scalars().all()
+        return [self._to_domain(orm_achievement) for orm_achievement in orm_achievements]
 
     def update(self, achievement: DomainAchievement) -> DomainAchievement:
         """Update existing achievement."""
-        with self._session_factory() as session:
-            orm_achievement = session.get(AchievementORM, achievement.id)
-            if orm_achievement is None:
-                raise AchievementNotFoundError(f"Achievement with ID {achievement.id} not found.")
-            orm_achievement.name = achievement.name
-            orm_achievement.description = achievement.description or ''
-            orm_achievement.icon = achievement.icon
-            orm_achievement.unlock_criteria = achievement.unlock_criteria or {}
-            orm_achievement.unlocked_at = achievement.unlocked_at
-            session.commit()
-            session.refresh(orm_achievement)
-            return self._to_domain(orm_achievement)
+        orm_achievement = self._session.get(AchievementORM, achievement.id)
+        if orm_achievement is None:
+            raise AchievementNotFoundError(f"Achievement with ID {achievement.id} not found.")
+        orm_achievement.name = achievement.name
+        orm_achievement.description = achievement.description or ''
+        orm_achievement.icon = achievement.icon
+        orm_achievement.unlock_criteria = achievement.unlock_criteria or {}
+        orm_achievement.unlocked_at = achievement.unlocked_at
+        self._session.commit()
+        self._session.refresh(orm_achievement)
+        return self._to_domain(orm_achievement)
 
     def delete(self, achievement_id: int) -> None:
         """Delete achievement by ID."""
-        with self._session_factory() as session:
-            orm_achievement = session.get(AchievementORM, achievement_id)
-            if orm_achievement is None:
-                raise AchievementNotFoundError(f"Achievement with ID {achievement_id} not found.")
-            session.delete(orm_achievement)
-            session.commit()
+        orm_achievement = self._session.get(AchievementORM, achievement_id)
+        if orm_achievement is None:
+            raise AchievementNotFoundError(f"Achievement with ID {achievement_id} not found.")
+        self._session.delete(orm_achievement)
+        self._session.commit()

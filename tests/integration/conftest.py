@@ -17,7 +17,9 @@ def in_memory_db():
     # Create session factory
     SessionLocal = sessionmaker(bind=engine)
 
-    yield SessionLocal
+    session = SessionLocal()
+
+    yield session
 
     # Cleanup
-    engine.dispose()
+    session.close()

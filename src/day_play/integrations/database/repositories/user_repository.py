@@ -9,8 +9,8 @@ from day_play.models.exceptions import UserNotFoundError
 
 
 class SQLAlchemyUserRepository:
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, session: Session):
+        self._session = session
 
 
 
@@ -39,37 +39,34 @@ class SQLAlchemyUserRepository:
 
     def create(self, user: DomainUser) -> DomainUser:
         """Create a new user."""
-        with self._session_factory() as session:
-            orm_user = self._to_orm(user)
-            session.add(orm_user)
-            session.commit()
-            session.refresh(orm_user)
-            return self._to_domain(orm_user)
+        orm_user = self._to_orm(user)
+        self._session.add(orm_user)
+        self._session.commit()
+        self._session.refresh(orm_user)
+        return self._to_domain(orm_user)
 
     def get_by_id(self, user_id: int) -> DomainUser | None:
         """Get user by ID."""
-        with self._session_factory() as session:
-            orm_user = session.get(UserORM, user_id)
-            if orm_user is None:
-                return None
-            return self._to_domain(orm_user)
+        orm_user = self._session.get(UserORM, user_id)
+        if orm_user is None:
+            return None
+        return self._to_domain(orm_user)
 
     def update(self, user: DomainUser) -> DomainUser:
         """Update existing user."""
         if user.id is None:
             raise ValueError("User ID must be provided for update.")
 
-        with self._session_factory() as session:
-            orm_user = session.get(UserORM, user.id)
-            if orm_user is None:
-                raise UserNotFoundError(f"User with ID {user.id} not found.")
-            orm_user.username = user.username
-            orm_user.current_level = user.current_level
-            orm_user.total_xp = user.total_xp
-            orm_user.updated_at = datetime.now(timezone.utc)
-            session.commit()
-            session.refresh(orm_user)
-            return self._to_domain(orm_user)
+        orm_user = self._session.get(UserORM, user.id)
+        if orm_user is None:
+            raise UserNotFoundError(f"User with ID {user.id} not found.")
+        orm_user.username = user.username
+        orm_user.current_level = user.current_level
+        orm_user.total_xp = user.total_xp
+        orm_user.updated_at = datetime.now(timezone.utc)
+        self._session.commit()
+        self._session.refresh(orm_user)
+        return self._to_domain(orm_user)
 
     def update_xp(self, user_id: int, xp_delta: int) -> DomainUser:
         """
@@ -82,15 +79,14 @@ class SQLAlchemyUserRepository:
         Returns:
             Updated user
         """
-        with self._session_factory() as session:
-            orm_user = session.get(UserORM, user_id)
-            if orm_user is None:
-                raise UserNotFoundError(f"User with ID {user_id} not found.")
-            orm_user.total_xp += xp_delta
-            orm_user.updated_at = datetime.now(timezone.utc)
-            session.commit()
-            session.refresh(orm_user)
-            return self._to_domain(orm_user)
+        orm_user = self._session.get(UserORM, user_id)
+        if orm_user is None:
+            raise UserNotFoundError(f"User with ID {user_id} not found.")
+        orm_user.total_xp += xp_delta
+        orm_user.updated_at = datetime.now(timezone.utc)
+        self._session.commit()
+        self._session.refresh(orm_user)
+        return self._to_domain(orm_user)
 
     def update_level(self, user_id: int, new_level: int) -> DomainUser:
         """
@@ -103,12 +99,11 @@ class SQLAlchemyUserRepository:
         Returns:
             Updated user
         """
-        with self._session_factory() as session:
-            orm_user = session.get(UserORM, user_id)
-            if orm_user is None:
-                raise UserNotFoundError(f"User with ID {user_id} not found.")
-            orm_user.current_level = new_level
-            orm_user.updated_at = datetime.now(timezone.utc)
-            session.commit()
-            session.refresh(orm_user)
-            return self._to_domain(orm_user)
+        orm_user = self._session.get(UserORM, user_id)
+        if orm_user is None:
+            raise UserNotFoundError(f"User with ID {user_id} not found.")
+        orm_user.current_level = new_level
+        orm_user.updated_at = datetime.now(timezone.utc)
+        self._session.commit()
+        self._session.refresh(orm_user)
+        return self._to_domain(orm_user)
