@@ -29,7 +29,7 @@ class TestPrize:
             )
     def test_prize_name_exceeds_max_length(self):
         """Test prize name maximum length validation."""
-        long_name = "a" * 101  # Exceeds max_length=100
+        long_name = "a" * 256  # Exceeds max_length=100
         with pytest.raises(ValidationError):
             Prize(
                 name=long_name,

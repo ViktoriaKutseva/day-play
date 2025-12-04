@@ -10,8 +10,8 @@ class Task(BaseModel):
     id: int | None = None
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(None, max_length=1000)
-    priority: Priority = Priority.MEDIUM
-    urgency: Urgency = Urgency.MEDIUM
+    priority: Priority = Priority.LOW
+    urgency: Urgency = Urgency.LOW
     status: TaskStatus = TaskStatus.PENDING
     due_date: datetime | None = None
     recurrence_pattern: RecurrencePattern = RecurrencePattern.NONE
@@ -82,20 +82,23 @@ class Achievement(BaseModel):
     id: int | None = None
     name: str = Field(..., min_length=1, max_length=100)
     description: str | None = Field(None, max_length=500)
-    icon: str = Field(..., min_length=1, max_length=255)
+    icon: str | None = Field (None, max_length=255)
     unlock_criteria: dict[str, Any] | None = None
     unlocked_at: datetime | None = None
     user_id: int | None = None
     created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 class Prize(BaseModel):
     id: int | None = None
-    name: str = Field(..., min_length=1, max_length=100)
+    name: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(None, max_length=500)
     cost_xp: int = Field(default=0, ge=0)
     redeemed: bool = False
     redeemed_at: datetime | None = None
     user_id: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     @field_validator("name")
     @classmethod
@@ -103,3 +106,4 @@ class Prize(BaseModel):
         if not value.strip():
             raise ValueError("Name cannot be empty or just whitespace.")
         return value.strip()
+    
