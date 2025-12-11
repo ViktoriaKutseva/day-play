@@ -38,12 +38,18 @@ This project combines task management with gamification elements while serving a
    uv sync
    ```
 
-2. Run the application:
+2. Run the application (combined API + Web interface):
    ```bash
-   uvicorn main:app --reload
+   make run
+   # Or directly:
+   uv run uvicorn day_play.entrypoints.api.main:app --reload
    ```
 
-3. Visit `http://localhost:8000/docs` for interactive API documentation
+3. Access the application:
+   - **Web Interface**: http://localhost:8000/
+   - **API Documentation**: http://localhost:8000/docs
+   - **API Endpoints**: http://localhost:8000/api/*
+   - **Health Check**: http://localhost:8000/health
 
 ## Learning Goals
 
