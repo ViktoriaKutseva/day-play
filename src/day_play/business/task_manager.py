@@ -363,7 +363,7 @@ class TaskManager:
                 )
                 return tasks
 
-            tasks = self._task_repository.get_by_user_id(user_id)
+            tasks = self._task_repository.list_tasks(user_id)
             if status is not None:
                 tasks = [t for t in tasks if t.status == status]
 

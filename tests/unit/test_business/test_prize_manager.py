@@ -84,12 +84,13 @@ class TestCreatePrize:
         mock_prize_repository.create.return_value = expected_prize
 
         # Act
-        result = prize_manager.create_prize(
+        prize_to_create = Prize(
             name="Gaming Mouse",
             description="High-quality gaming mouse",
             cost_xp=500,
             user_id=1,
         )
+        result = prize_manager.create_prize(prize_to_create)
 
         # Assert
         assert result == expected_prize
@@ -107,22 +108,28 @@ class TestCreatePrize:
     ):
         """Test that creating a prize with zero XP threshold raises ValueError."""
         # Act & Assert
+        prize_to_create = Prize(
+            name="Invalid Prize",
+            description="This should fail",
+            cost_xp=0,
+            user_id=1,
+        )
         with pytest.raises(ValueError, match="Prize XP threshold must be greater than 0"):
-            prize_manager.create_prize(
-                name="Invalid Prize",
-                description="This should fail",
-                cost_xp=0,
-                user_id=1,
-            )
+            prize_manager.create_prize(prize_to_create)
 
     def test_create_prize_with_negative_xp_raises_error(
         self,
         prize_manager: PrizeManager,
     ):
-        """Test that creating a prize with negative XP threshold raises ValueError."""
-        # Act & Assert
-        with pytest.raises(ValueError, match="Prize XP threshold must be greater than 0"):
-            prize_manager.create_prize(
+        """Test that creating a prize with negative XP threshold raises ValidationError.
+        
+        Note: Pydantic validation at the entity level rejects negative cost_xp
+        before the business logic can even be called.
+        """
+        # Act & Assert - Pydantic validation catches this at entity creation
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
+            Prize(
                 name="Invalid Prize",
                 description="This should fail",
                 cost_xp=-100,
@@ -135,13 +142,14 @@ class TestCreatePrize:
     ):
         """Test that creating a prize exceeding 100,000 XP raises ValueError."""
         # Act & Assert
+        prize_to_create = Prize(
+            name="Overpowered Prize",
+            description="This should fail",
+            cost_xp=150000,
+            user_id=1,
+        )
         with pytest.raises(ValueError, match="Prize XP threshold cannot exceed 100,000"):
-            prize_manager.create_prize(
-                name="Overpowered Prize",
-                description="This should fail",
-                cost_xp=150000,
-                user_id=1,
-            )
+            prize_manager.create_prize(prize_to_create)
 
     def test_create_prize_at_max_xp_threshold(
         self,
@@ -161,12 +169,13 @@ class TestCreatePrize:
         mock_prize_repository.create.return_value = expected_prize
 
         # Act
-        result = prize_manager.create_prize(
+        prize_to_create = Prize(
             name="Ultimate Prize",
             description="Maximum threshold prize",
             cost_xp=100000,
             user_id=1,
         )
+        result = prize_manager.create_prize(prize_to_create)
 
         # Assert
         assert result.cost_xp == 100000

@@ -19,16 +19,11 @@ class PrizeManager:
         self._prize_repository = prize_repository
         self._user_repository = user_repository
 
-    def create_prize(
-        self, name: str, description: str, cost_xp: int, user_id: int
-    ) -> Prize:
+    def create_prize(self, prize: Prize) -> Prize:
         """Create a new prize with validation.
 
         Args:
-            name: Prize name
-            description: Prize description
-            cost_xp: XP threshold required to unlock this prize
-            user_id: ID of the user creating the prize
+            prize: Prize entity to create
 
         Returns:
             Created prize entity
@@ -37,23 +32,19 @@ class PrizeManager:
             ValueError: If cost_xp is invalid
         """
         # Validate XP threshold
-        if cost_xp <= 0:
-            logger.error(f"Invalid cost_xp: {cost_xp}. Must be greater than 0.")
+        if prize.cost_xp <= 0:
+            logger.error(f"Invalid cost_xp: {prize.cost_xp}. Must be greater than 0.")
             raise ValueError("Prize XP threshold must be greater than 0")
 
-        if cost_xp > 100000:
-            logger.error(f"Invalid cost_xp: {cost_xp}. Exceeds maximum of 100,000 XP.")
+        if prize.cost_xp > 100000:
+            logger.error(
+                f"Invalid cost_xp: {prize.cost_xp}. Exceeds maximum of 100,000 XP."
+            )
             raise ValueError("Prize XP threshold cannot exceed 100,000")
 
         logger.info(
-            f"Creating prize: name={name}, cost_xp={cost_xp}, user_id={user_id}"
-        )
-        prize = Prize(
-            name=name,
-            description=description,
-            cost_xp=cost_xp,
-            redeemed=False,
-            user_id=user_id,
+            f"Creating prize: name={prize.name}, cost_xp={prize.cost_xp}, "
+            f"user_id={prize.user_id}"
         )
         created_prize = self._prize_repository.create(prize)
         logger.info(f"Created prize: {created_prize}")

@@ -561,13 +561,13 @@ class TestTaskManagerGetTasks:
                 status=TaskStatus.PENDING,
             ),
         ]
-        mock_task_repository.get_by_user_id.return_value = tasks
+        mock_task_repository.list_tasks.return_value = tasks
 
         result = task_manager.get_tasks(user_id=1)
 
         assert len(result) == 3
         assert result == tasks
-        mock_task_repository.get_by_user_id.assert_called_once_with(1)
+        mock_task_repository.list_tasks.assert_called_once_with(1)
 
     def test_get_tasks_filtered_by_status(
         self, task_manager, mock_task_repository, mock_user_repository
@@ -596,13 +596,13 @@ class TestTaskManagerGetTasks:
                 status=TaskStatus.PENDING,
             ),
         ]
-        mock_task_repository.get_by_user_id.return_value = all_tasks
+        mock_task_repository.list_tasks.return_value = all_tasks
 
         result = task_manager.get_tasks(user_id=1, status=TaskStatus.PENDING)
 
         assert len(result) == 2
         assert all(t.status == TaskStatus.PENDING for t in result)
-        mock_task_repository.get_by_user_id.assert_called_once_with(1)
+        mock_task_repository.list_tasks.assert_called_once_with(1)
 
     def test_get_tasks_overdue_only(
         self, task_manager, mock_task_repository, mock_user_repository
@@ -728,7 +728,7 @@ class TestTaskManagerRepositoryExceptions:
             task_manager.undo_task(completed_task.id, completed_task.user_id)
 
     def test_get_tasks_repository_exception_propagates(self, task_manager, mock_task_repository):
-        mock_task_repository.get_by_user_id.side_effect = Exception("Database error")
+        mock_task_repository.list_tasks.side_effect = Exception("Database error")
         with pytest.raises(Exception, match="Database error"):
             task_manager.get_tasks(user_id=1)
 
