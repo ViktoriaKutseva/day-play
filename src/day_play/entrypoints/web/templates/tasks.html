@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+
+{% block title %}Task Manager{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto" x-data="taskManagerComponent()">
+  
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-2">
+      📋 Task Manager
+    </h1>
+    <p class="text-gray-600">
+      Manage your tasks, track progress, and level up!
+    </p>
+  </div>
+  
+  <!-- Loading State -->
+  <div x-show="loading && tasks.length === 0" class="text-center py-20">
+    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+    <p class="mt-4 text-gray-600">Loading tasks...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div x-show="error" 
+       x-transition
+       class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <p class="text-red-700" x-text="error"></p>
+    <button 
+      @click="error = null"
+      class="mt-2 text-red-600 underline hover:text-red-800"
+    >
+      Dismiss
+    </button>
+  </div>
+  
+  <!-- Main Content -->
+  <div x-show="!loading || tasks.length > 0" x-transition>
+    
+    <!-- Filters Bar -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-bold mb-4 text-gray-800">🔍 Filters</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Status
+          </label>
+          <select 
+            x-model="statusFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        
+        <!-- Priority Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Priority
+          </label>
+          <select 
+            x-model="priorityFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        
+        <!-- Urgency Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Urgency
+          </label>
+          <select 
+            x-model="urgencyFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        
+        <!-- Date From -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            From Date
+          </label>
+          <input 
+            type="date"
+            x-model="dateFromFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+        
+        <!-- Date To -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            To Date
+          </label>
+          <input 
+            type="date"
+            x-model="dateToFilter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+      </div>
+      
+      <!-- Reset Button -->
+      <div class="mt-4 flex justify-end">
+        <button 
+          @click="resetFilters()"
+          x-show="hasActiveFilters"
+          class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+        >
+          🔄 Reset Filters
+        </button>
+      </div>
+    </div>
+    
+    <!-- Task Statistics -->
+    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg shadow p-6 mb-6">
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <div class="text-3xl font-bold text-blue-600" x-text="taskStats.total"></div>
+          <div class="text-sm text-gray-600">Total Tasks</div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold text-yellow-600" x-text="taskStats.active"></div>
+          <div class="text-sm text-gray-600">Active</div>
+        </div>
+        <div>
+          <div class="text-3xl font-bold text-green-600" x-text="taskStats.completed"></div>
+          <div class="text-sm text-gray-600">Completed</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Task List -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">📝 Your Tasks</h2>
+      
+      <!-- Empty State -->
+      <div x-show="filteredTasks.length === 0" 
+           class="text-center py-12">
+        <div class="text-6xl mb-4">📭</div>
+        <p class="text-gray-500 text-lg">No tasks found</p>
+        <p class="text-gray-400 text-sm mt-2" x-show="hasActiveFilters">
+          Try adjusting your filters
+        </p>
+      </div>
+      
+      <!-- Task Cards -->
+      <div class="space-y-4">
+        <template x-for="task in paginatedTasks" :key="task.id">
+          <div class="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all"
+               :class="{ 'opacity-60': task.status === 'completed' }">
+            
+            <!-- Task Header -->
+            <div class="flex items-start gap-4">
+              <!-- Checkbox -->
+              <div class="pt-1">
+                <input 
+                  type="checkbox"
+                  :checked="task.status === 'completed'"
+                  @change="toggleTaskComplete(task)"
+                  class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+              </div>
+              
+              <!-- Task Info -->
+              <div class="flex-1">
+                <!-- Title and XP -->
+                <div class="flex justify-between items-start mb-2">
+                  <h3 class="font-semibold text-lg text-gray-800"
+                      :class="{ 'line-through text-gray-500': task.status === 'completed' }"
+                      x-text="task.title">
+                  </h3>
+                  <span class="text-sm font-medium text-purple-600 ml-2" 
+                        x-text="`${task.xp_value} XP`">
+                  </span>
+                </div>
+                
+                <!-- Description -->
+                <p x-show="task.description" 
+                   class="text-sm text-gray-600 mb-3"
+                   x-text="task.description">
+                </p>
+                
+                <!-- Badges and Info -->
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                  <!-- Priority Badge -->
+                  <span class="px-2 py-1 rounded text-xs font-medium"
+                        :class="{
+                          'bg-red-100 text-red-700': task.priority === 'high',
+                          'bg-yellow-100 text-yellow-700': task.priority === 'medium',
+                          'bg-green-100 text-green-700': task.priority === 'low'
+                        }">
+                    Priority: <span x-text="task.priority"></span>
+                  </span>
+                  
+                  <!-- Urgency Badge -->
+                  <span class="px-2 py-1 rounded text-xs font-medium"
+                        :class="{
+                          'bg-red-100 text-red-700': task.urgency === 'high',
+                          'bg-yellow-100 text-yellow-700': task.urgency === 'medium',
+                          'bg-blue-100 text-blue-700': task.urgency === 'low'
+                        }">
+                    Urgency: <span x-text="task.urgency"></span>
+                  </span>
+                  
+                  <!-- Due Date -->
+                  <span x-show="task.due_date" 
+                        class="text-xs text-gray-600">
+                    📅 <span x-text="new Date(task.due_date).toLocaleString()"></span>
+                  </span>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-2">
+                  <!-- Edit Button -->
+                  <button 
+                    @click="openEditModal(task)"
+                    class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  >
+                    ✏️ Edit
+                  </button>
+                  
+                  <!-- Undo Button (for completed tasks) -->
+                  <button 
+                    x-show="task.status === 'completed'"
+                    @click="toggleTaskComplete(task)"
+                    class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+                  >
+                    ↩️ Undo
+                  </button>
+                  
+                  <!-- Delete Button -->
+                  <button 
+                    @click="confirmDelete(task)"
+                    class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      
+      <!-- Pagination -->
+      <div x-show="totalPages > 1" class="mt-6 flex justify-center items-center gap-2">
+        <button 
+          @click="currentPage--"
+          :disabled="currentPage === 1"
+          class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        
+        <span class="text-gray-600">
+          Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span>
+        </span>
+        
+        <button 
+          @click="currentPage++"
+          :disabled="currentPage === totalPages"
+          class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Edit Modal -->
+  <div x-show="showEditModal" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+       @click.self="closeEditModal()">
+    
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+         @click.stop>
+      
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center p-6 border-b">
+        <h2 class="text-2xl font-bold text-gray-800">✏️ Edit Task</h2>
+        <button 
+          @click="closeEditModal()"
+          class="text-gray-400 hover:text-gray-600 text-2xl"
+        >
+          ✕
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <!-- Title -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Title *
+          </label>
+          <input 
+            type="text"
+            x-model="editForm.title"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            required
+          >
+        </div>
+        
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
+          <textarea 
+            x-model="editForm.description"
+            rows="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          ></textarea>
+        </div>
+        
+        <!-- Priority -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Priority
+          </label>
+          <div class="flex gap-4">
+            <label class="flex items-center">
+              <input type="radio" x-model="editForm.priority" value="high" class="mr-2">
+              <span class="px-3 py-1 rounded text-sm bg-red-100 text-red-700">High</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" x-model="editForm.priority" value="medium" class="mr-2">
+              <span class="px-3 py-1 rounded text-sm bg-yellow-100 text-yellow-700">Medium</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" x-model="editForm.priority" value="low" class="mr-2">
+              <span class="px-3 py-1 rounded text-sm bg-green-100 text-green-700">Low</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Urgency -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Urgency
+          </label>
+          <div class="flex gap-4">
+            <label class="flex items-center">
+              <input type="radio" x-model="editForm.urgency" value="high" class="mr-2">
+              <span class="px-3 py-1 rounded text-sm bg-red-100 text-red-700">High</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" x-model="editForm.urgency" value="medium" class="mr-2">
+              <span class="px-3 py-1 rounded text-sm bg-yellow-100 text-yellow-700">Medium</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" x-model="editForm.urgency" value="low" class="mr-2">
+              <span class="px-3 py-1 rounded text-sm bg-blue-100 text-blue-700">Low</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Due Date -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Due Date
+          </label>
+          <input 
+            type="datetime-local"
+            x-model="editForm.due_date"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex justify-end gap-3 p-6 border-t">
+        <button 
+          @click="closeEditModal()"
+          class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          @click="saveTask()"
+          class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          :disabled="!editForm.title.trim()"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Delete Confirmation Modal -->
+  <div x-show="showDeleteModal" 
+       x-transition
+       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+       @click.self="cancelDelete()">
+    
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full" @click.stop>
+      <!-- Modal Header -->
+      <div class="p-6 border-b">
+        <h2 class="text-2xl font-bold text-gray-800">⚠️ Confirm Delete</h2>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <p class="text-gray-700 mb-2">
+          Are you sure you want to delete this task?
+        </p>
+        <p class="font-semibold text-gray-900 mb-4" x-text="taskToDelete?.title"></p>
+        <p class="text-sm text-red-600">
+          This action cannot be undone.
+        </p>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex justify-end gap-3 p-6 border-t">
+        <button 
+          @click="cancelDelete()"
+          class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          @click="deleteTask()"
+          class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+        >
+          Delete Task
+        </button>
+      </div>
+    </div>
+  </div>
+  
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function taskManagerComponent() {
+  return {
+    // State
+    tasks: [],
+    loading: true,
+    error: null,
+    
+    // Filters
+    statusFilter: 'all',
+    priorityFilter: 'all',
+    urgencyFilter: 'all',
+    dateFromFilter: '',
+    dateToFilter: '',
+    
+    // UI State
+    showEditModal: false,
+    showDeleteModal: false,
+    selectedTask: null,
+    taskToDelete: null,
+    
+    // Edit Form
+    editForm: {
+      title: '',
+      description: '',
+      priority: 'medium',
+      urgency: 'medium',
+      due_date: ''
+    },
+    
+    // Pagination
+    currentPage: 1,
+    tasksPerPage: 10,
+    
+    // Computed Properties
+    get filteredTasks() {
+      let result = this.tasks;
+      
+      if (this.statusFilter !== 'all') {
+        result = result.filter(task => task.status === this.statusFilter);
+      }
+      
+      if (this.priorityFilter !== 'all') {
+        result = result.filter(task => task.priority === this.priorityFilter);
+      }
+      
+      if (this.urgencyFilter !== 'all') {
+        result = result.filter(task => task.urgency === this.urgencyFilter);
+      }
+      
+      if (this.dateFromFilter) {
+        const fromDate = new Date(this.dateFromFilter);
+        result = result.filter(task => {
+          if (!task.due_date) return false;
+          return new Date(task.due_date) >= fromDate;
+        });
+      }
+      
+      if (this.dateToFilter) {
+        const toDate = new Date(this.dateToFilter);
+        result = result.filter(task => {
+          if (!task.due_date) return false;
+          return new Date(task.due_date) <= toDate;
+        });
+      }
+      
+      return result;
+    },
+    
+    get paginatedTasks() {
+      const start = (this.currentPage - 1) * this.tasksPerPage;
+      const end = start + this.tasksPerPage;
+      return this.filteredTasks.slice(start, end);
+    },
+    
+    get taskStats() {
+      return {
+        total: this.filteredTasks.length,
+        active: this.filteredTasks.filter(t => t.status === 'pending').length,
+        completed: this.filteredTasks.filter(t => t.status === 'completed').length
+      };
+    },
+    
+    get hasActiveFilters() {
+      return this.statusFilter !== 'all' 
+        || this.priorityFilter !== 'all'
+        || this.urgencyFilter !== 'all'
+        || this.dateFromFilter !== ''
+        || this.dateToFilter !== '';
+    },
+    
+    get totalPages() {
+      return Math.ceil(this.filteredTasks.length / this.tasksPerPage);
+    },
+    
+    // Lifecycle
+    async init() {
+      await this.loadTasks();
+    },
+    
+    // Data Operations
+    async loadTasks() {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        const response = await fetch('/api/tasks?user_id=1');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        this.tasks = await response.json();
+        this.loading = false;
+      } catch (error) {
+        console.error('Failed to load tasks:', error);
+        this.error = 'Failed to load tasks. Please try again.';
+        this.loading = false;
+      }
+    },
+    
+    // Filter Operations
+    resetFilters() {
+      this.statusFilter = 'all';
+      this.priorityFilter = 'all';
+      this.urgencyFilter = 'all';
+      this.dateFromFilter = '';
+      this.dateToFilter = '';
+      this.currentPage = 1;
+    },
+    
+    // Task Actions
+    async toggleTaskComplete(task) {
+      const previousStatus = task.status;
+      const previousUpdatedAt = task.updated_at;
+      
+      // Optimistic update
+      task.status = task.status === 'completed' ? 'pending' : 'completed';
+      task.updated_at = new Date().toISOString();
+      
+      try {
+        const endpoint = task.status === 'completed' 
+          ? `/api/tasks/${task.id}/complete`
+          : `/api/tasks/${task.id}/undo`;
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error('Failed to update task');
+        
+        const updatedTask = await response.json();
+        Object.assign(task, updatedTask);
+        
+      } catch (error) {
+        console.error('Failed to toggle task completion:', error);
+        task.status = previousStatus;
+        task.updated_at = previousUpdatedAt;
+        this.error = 'Failed to update task. Please try again.';
+        setTimeout(() => { this.error = null; }, 3000);
+      }
+    },
+    
+    openEditModal(task) {
+      this.selectedTask = task;
+      this.editForm = {
+        title: task.title,
+        description: task.description || '',
+        priority: task.priority,
+        urgency: task.urgency,
+        due_date: task.due_date ? task.due_date.slice(0, 16) : ''
+      };
+      this.showEditModal = true;
+    },
+    
+    closeEditModal() {
+      this.showEditModal = false;
+      this.selectedTask = null;
+      this.editForm = {
+        title: '',
+        description: '',
+        priority: 'medium',
+        urgency: 'medium',
+        due_date: ''
+      };
+    },
+    
+    async saveTask() {
+      if (!this.editForm.title.trim()) {
+        this.error = 'Task title is required';
+        return;
+      }
+      
+      try {
+        this.loading = true;
+        
+        const response = await fetch(`/api/tasks/${this.selectedTask.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: this.editForm.title,
+            description: this.editForm.description,
+            priority: this.editForm.priority,
+            urgency: this.editForm.urgency,
+            due_date: this.editForm.due_date || null
+          })
+        });
+        
+        if (!response.ok) throw new Error('Failed to update task');
+        
+        const updatedTask = await response.json();
+        const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+        
+        this.closeEditModal();
+        this.loading = false;
+        
+      } catch (error) {
+        console.error('Failed to save task:', error);
+        this.error = 'Failed to save task. Please try again.';
+        this.loading = false;
+      }
+    },
+    
+    confirmDelete(task) {
+      this.taskToDelete = task;
+      this.showDeleteModal = true;
+    },
+    
+    cancelDelete() {
+      this.showDeleteModal = false;
+      this.taskToDelete = null;
+    },
+    
+    async deleteTask() {
+      if (!this.taskToDelete) return;
+      
+      const taskId = this.taskToDelete.id;
+      
+      try {
+        this.loading = true;
+        
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) throw new Error('Failed to delete task');
+        
+        this.tasks = this.tasks.filter(t => t.id !== taskId);
+        this.showDeleteModal = false;
+        this.taskToDelete = null;
+        this.loading = false;
+        
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+        this.error = 'Failed to delete task. Please try again.';
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>
+{% endblock %}

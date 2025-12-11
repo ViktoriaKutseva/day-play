@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Day-Play{% endblock %} - Gamified Task Management</title>
+        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'day-play-primary': '#3B82F6',  // Blue
+                            'day-play-secondary': '#10B981', // Green
+                            'day-play-accent': '#F59E0B',    // Amber
+                        }
+                    }
+                }
+            }
+        </script>
+        
+        <!-- Custom CSS (if needed) -->
+        <link rel="stylesheet" href="/static/css/main.css">
+        
+        <!-- Block for additional head content from child templates -->
+        {% block head %}{% endblock %}
+    </head>
+
+    <body class="bg-gray-50 min-h-screen flex flex-col">
+        <!-- Header with Navigation -->
+        <header class="bg-white shadow-sm">
+            <nav class="container mx-auto px-4 py-3" x-data="{ mobileMenuOpen: false }">
+                <div class="flex items-center justify-between">
+                    <!-- Logo/Brand -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">🎮</span>
+                        <span class="text-xl font-bold text-day-play-primary">
+                            Day-Play
+                        </span>
+                    </div>
+                    
+                    <!-- Desktop Navigation -->
+                    <div class="hidden md:flex space-x-6">
+                        <a href="/" class="text-gray-700 hover:text-day-play-primary transition">
+                            Dashboard
+                        </a>
+                        <a href="/history" class="text-gray-700 hover:text-day-play-primary transition">
+                            History
+                        </a>
+                        <a href="/settings" class="text-gray-700 hover:text-day-play-primary transition">
+                            Settings
+                        </a>
+                    </div>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button 
+                        @click="mobileMenuOpen = !mobileMenuOpen"
+                        class="md:hidden text-gray-700"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Mobile Navigation Menu -->
+                <div x-show="mobileMenuOpen" 
+                    x-transition
+                    class="md:hidden mt-4 space-y-2">
+                    <a href="/" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                        Dashboard
+                    </a>
+                    <a href="/history" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                        History
+                    </a>
+                    <a href="/settings" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                        Settings
+                    </a>
+                </div>
+            </nav>
+        </header>
+        
+        <!-- Main Content Area -->
+        <main class="flex-grow container mx-auto px-4 py-8">
+            <!-- Flash messages (optional - for notifications) -->
+            {% block messages %}
+                {% if messages %}
+                    <div class="mb-4 space-y-2">
+                        {% for message in messages %}
+                            <div class="p-4 rounded-lg bg-blue-50 text-blue-800 border border-blue-200">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endblock %}
+            
+            <!-- Page-specific content goes here -->
+            {% block content %}
+                <div class="text-center py-20">
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        Welcome to Day-Play!
+                    </h1>
+                    <p class="text-gray-600 mt-2">
+                        This is the base template. Child templates override this content.
+                    </p>
+                </div>
+            {% endblock %}
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-gray-300 py-6 mt-auto">
+            <div class="container mx-auto px-4 text-center">
+                <p>&copy; 2025 Day-Play - Gamified Task Management</p>
+                <div class="mt-2 space-x-4">
+                    <a href="#" class="hover:text-white transition">About</a>
+                    <a href="#" class="hover:text-white transition">Privacy</a>
+                    <a href="#" class="hover:text-white transition">Terms</a>
+                </div>
+            </div>
+        </footer>
+        
+        <!-- Block for additional scripts from child templates -->
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

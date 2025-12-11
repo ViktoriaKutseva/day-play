@@ -1,0 +1,285 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto" x-data="dashboardComponent()">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-2">
+      🎮 Your Dashboard
+    </h1>
+    <p class="text-gray-600">
+      Track your progress, manage tasks, and level up!
+    </p>
+  </div>
+  
+  <!-- Loading State -->
+  <div x-show="loading" class="text-center py-20">
+    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+    <p class="mt-4 text-gray-600">Loading your dashboard...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <p class="text-red-700" x-text="error"></p>
+    <button 
+      @click="init()"
+      class="mt-2 text-red-600 underline hover:text-red-800"
+    >
+      Try Again
+    </button>
+  </div>
+  
+  <!-- Main Content (shown after loading) -->
+  <div x-show="!loading && !error" x-transition>
+    
+    <!-- Progress Bars Section -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">📊 Your Progress</h2>
+      
+      <!-- Daily Progress -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-medium text-gray-700">Daily Progress</span>
+          <span class="text-sm font-medium text-blue-600" 
+                x-text="`${Math.round(dailyProgress)}%`">
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+          <div class="bg-blue-500 h-4 rounded-full transition-all duration-500"
+               :style="`width: ${dailyProgress}%`">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Level Progress -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-medium text-gray-700">
+            Level <span x-text="level"></span> Progress
+          </span>
+          <span class="text-sm font-medium text-green-600" 
+                x-text="`${currentXP} / ${nextLevelXP} XP`">
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+          <div class="bg-green-500 h-4 rounded-full transition-all duration-500"
+               :style="`width: ${levelProgress}%`">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Level Display -->
+      <div class="text-center p-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
+        <div class="text-3xl font-bold text-purple-700">
+          Level <span x-text="level"></span>
+        </div>
+        <div class="text-sm text-gray-600 mt-1">
+          <span x-text="currentXP"></span> XP | 
+          <span x-text="nextLevelXP - currentXP"></span> XP to next level
+        </div>
+      </div>
+    </div>
+    
+    <!-- Upcoming Tasks Section -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">📋 Upcoming Tasks</h2>
+      
+      <div x-show="tasks.length === 0" class="text-gray-500 text-center py-4">
+        No tasks for today. Add one below! 🎯
+      </div>
+      
+      <div class="space-y-3">
+        <template x-for="task in tasks" :key="task.id">
+          <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="font-semibold text-gray-800" x-text="task.title"></h3>
+              <span class="text-sm font-medium text-purple-600" 
+                    x-text="`${task.xp_value} XP`">
+              </span>
+            </div>
+            
+            <div class="flex gap-2 mb-2">
+              <span class="px-2 py-1 rounded text-xs font-medium"
+                    :class="{
+                      'bg-red-100 text-red-700': task.priority === 'high',
+                      'bg-yellow-100 text-yellow-700': task.priority === 'medium',
+                      'bg-green-100 text-green-700': task.priority === 'low'
+                    }"
+                    x-text="`Priority: ${task.priority}`">
+              </span>
+              
+              <span class="px-2 py-1 rounded text-xs font-medium"
+                    :class="{
+                      'bg-red-100 text-red-700': task.urgency === 'high',
+                      'bg-yellow-100 text-yellow-700': task.urgency === 'medium',
+                      'bg-blue-100 text-blue-700': task.urgency === 'low'
+                    }"
+                    x-text="`Urgency: ${task.urgency}`">
+              </span>
+            </div>
+            
+            <p x-show="task.due_date" class="text-sm text-gray-600">
+              📅 Due: <span x-text="new Date(task.due_date).toLocaleString()"></span>
+            </p>
+          </div>
+        </template>
+      </div>
+    </div>
+    
+    <!-- Recent Achievements Section -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">🏆 Recent Achievements</h2>
+      
+      <div x-show="achievements.length === 0" 
+           class="text-gray-500 text-center py-4">
+        Complete tasks to unlock achievements! 🎯
+      </div>
+      
+      <div class="space-y-3">
+        <template x-for="achievement in achievements" :key="achievement.id">
+          <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <span class="text-3xl" x-text="achievement.icon || '🏆'"></span>
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-800" x-text="achievement.name"></h3>
+              <p class="text-sm text-gray-600" x-text="achievement.description"></p>
+              <p class="text-xs text-gray-500 mt-1">
+                Unlocked: <span x-text="new Date(achievement.unlocked_at).toLocaleDateString()"></span>
+              </p>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+    
+    <!-- Quick Add Task Section -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">➕ Quick Add Task</h2>
+      
+      <form @submit.prevent="addTask()" class="space-y-4">
+        <div>
+          <input 
+            type="text"
+            x-model="newTaskTitle"
+            placeholder="What needs to be done?"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+        </div>
+        
+        <button 
+          type="submit"
+          class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          :disabled="loading || !newTaskTitle.trim()"
+        >
+          <span x-show="!loading">Add Task</span>
+          <span x-show="loading">Adding...</span>
+        </button>
+      </form>
+      
+      <div x-show="taskAdded" 
+           x-transition
+           class="mt-4 p-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
+        ✅ Task added successfully!
+      </div>
+    </div>
+    
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function dashboardComponent() {
+  return {
+    // State
+    loading: true,
+    error: null,
+    dailyProgress: 0,
+    levelProgress: 0,
+    level: 1,
+    currentXP: 0,
+    nextLevelXP: 100,
+    tasks: [],
+    achievements: [],
+    newTaskTitle: '',
+    taskAdded: false,
+    
+    // Initialize - runs when component loads
+    async init() {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        const response = await fetch('/api/dashboard?user_id=1');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Update state with API data
+        this.dailyProgress = data.progress.daily_completion_percent;
+        this.levelProgress = data.progress.level_progress_percent;
+        this.level = data.user_level.current_level;
+        this.currentXP = data.user_level.total_xp;
+        this.nextLevelXP = data.user_level.xp_for_next_level;
+        this.tasks = data.upcoming_tasks;
+        this.achievements = data.recent_achievements;
+        
+        this.loading = false;
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+        this.error = 'Failed to load dashboard data. Please refresh the page.';
+        this.loading = false;
+      }
+    },
+    
+    // Add new task
+    async addTask() {
+      if (!this.newTaskTitle.trim()) return;
+      
+      try {
+        this.loading = true;
+        
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: this.newTaskTitle,
+            priority: 'medium',
+            urgency: 'medium',
+            status: 'pending'
+          })
+        });
+        
+        if (!response.ok) throw new Error('Failed to create task');
+        
+        const newTask = await response.json();
+        this.tasks.push(newTask);
+        this.newTaskTitle = '';
+        this.taskAdded = true;
+        
+        setTimeout(() => { 
+          this.taskAdded = false; 
+        }, 3000);
+        
+        // Reload dashboard to refresh progress
+        await this.init();
+        
+      } catch (error) {
+        console.error('Failed to add task:', error);
+        this.error = 'Failed to add task. Please try again.';
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>
+{% endblock %}
+
