@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from day_play.business.achievement_manager import AchievementManager
+from day_play.business.dashboard_service import DashboardService
 from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.prize_manager import PrizeManager
 from day_play.business.progress_tracker import ProgressTracker
@@ -241,4 +242,39 @@ def get_task_manager(
         gamification=gamification,
         recurrence=recurrence,
         achievement_manager=achievement_manager,
+    )
+
+
+# =============================================================================
+# Level 5: DashboardService (Depends on TaskManager)
+# =============================================================================
+
+def get_dashboard_service(
+    task_manager: TaskManager = Depends(get_task_manager),
+    progress_tracker: ProgressTracker = Depends(get_progress_tracker),
+    achievement_manager: AchievementManager = Depends(get_achievement_manager),
+    gamification: GamificationEngine = Depends(get_gamification_engine),
+    user_repository: SQLAlchemyUserRepository = Depends(get_user_repository),
+) -> DashboardService:
+    """Get DashboardService instance.
+
+    DashboardService aggregates data from multiple services for the
+    dashboard endpoint, keeping routes thin and schemas pure.
+
+    Args:
+        task_manager: Service for task operations
+        progress_tracker: Service for progress calculations
+        achievement_manager: Service for achievement operations
+        gamification: Engine for XP/level calculations
+        user_repository: Repository for user data access
+
+    Returns:
+        DashboardService: Configured dashboard aggregation service
+    """
+    return DashboardService(
+        task_manager=task_manager,
+        progress_tracker=progress_tracker,
+        achievement_manager=achievement_manager,
+        gamification=gamification,
+        user_repository=user_repository,
     )
