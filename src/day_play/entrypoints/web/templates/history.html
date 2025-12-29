@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}History{% endblock %}
+
+{% block content %}
+<div x-data="historyComponent()" x-init="loadHistory()" class="max-w-7xl mx-auto p-6">
+  
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+      📅 Progress History
+    </h1>
+    <p class="text-gray-600">
+      Review your journey and track your productivity patterns
+    </p>
+  </div>
+  
+  <!-- Loading State -->
+  <div x-show="isLoading" class="flex justify-center items-center py-20">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+  
+  <!-- Error State -->
+  <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <p class="text-red-800" x-text="error"></p>
+  </div>
+  
+  <!-- Main Content (shown when loaded) -->
+  <div x-show="!isLoading && historyData" class="space-y-6">
+        
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Total Tasks -->
+      <div class="stat-card">
+        <div class="stat-card-label">Tasks Completed</div>
+        <div class="stat-card-value text-blue-600" x-text="totalTasksCompleted"></div>
+      </div>
+      <!-- Total XP -->
+      <div class="stat-card">
+        <div class="stat-card-label">XP Earned</div>
+        <div class="stat-card-value text-purple-600" x-text="totalXpEarned"></div>
+      </div>
+      
+      <!-- Average Completion -->
+      <div class="stat-card">
+        <div class="stat-card-label">Avg. Completion</div>
+        <div class="stat-card-value text-green-600">
+          <span x-text="averageCompletion.toFixed(1)"></span>%
+        </div>
+      </div>
+    </div>
+    
+    <!-- Date Range Selector -->
+    <div class="bg-white rounded-lg shadow p-4 flex items-center justify-between">
+      <div class="text-gray-700 font-medium">Date Range:</div>
+      <select 
+        x-model="days" 
+        @change="loadHistory()"
+        class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="7">Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+        <option value="90">Last 90 Days</option>
+        <option value="365">Last Year</option>
+      </select>
+    </div>
+    
+    <!-- Calendar Grid -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold mb-4">Daily Progress Calendar</h2>
+      
+      <!-- Debug info (remove in production) -->
+      <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-4 text-sm">
+        📊 Debug Info: 
+        <span x-text="`Progress entries: ${progressEntries.length} | Weeks: ${weeks.length} | Days: ${days}`"></span>
+        <br>
+        <span x-show="weeks.length > 0" x-text="`First week has ${weeks[0] ? weeks[0].length : 0} cells`"></span>
+      </div>
+      
+      <!-- Calendar Legend -->
+      <div class="flex flex-wrap gap-4 mb-6 text-sm">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 bg-green-500 rounded"></div>
+          <span>90%+ completion</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 bg-yellow-500 rounded"></div>
+          <span>50-89% completion</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 bg-red-400 rounded"></div>
+          <span>1-49% completion</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 bg-gray-200 rounded"></div>
+          <span>No tasks</span>
+        </div>
+      </div>
+      
+      <!-- Day of Week Headers -->
+      <div class="grid grid-cols-7 gap-2 mb-2">
+        <div class="text-center font-semibold text-gray-600 text-sm">Sun</div>
+        <div class="text-center font-semibold text-gray-600 text-sm">Mon</div>
+        <div class="text-center font-semibold text-gray-600 text-sm">Tue</div>
+        <div class="text-center font-semibold text-gray-600 text-sm">Wed</div>
+        <div class="text-center font-semibold text-gray-600 text-sm">Thu</div>
+        <div class="text-center font-semibold text-gray-600 text-sm">Fri</div>
+        <div class="text-center font-semibold text-gray-600 text-sm">Sat</div>
+      </div>
+      
+      <!-- Calendar Weeks -->
+      <div class="space-y-2">
+        <template x-for="(week, weekIndex) in weeks" :key="weekIndex">
+          <div class="grid grid-cols-7 gap-2">
+            <template x-for="(day, dayIndex) in week" :key="dayIndex">
+              <div 
+                @click="day && loadDayDetail(day.date)"
+                :class="[
+                  day ? getCompletionColor(day.completion_percentage) : 'bg-transparent',
+                  day ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
+                ]"
+                class="min-h-[80px] rounded-lg p-2 flex flex-col items-start justify-start transition-all relative group">
+                
+                <!-- Day content (only show if day exists) -->
+                <div x-show="day" class="w-full">
+                  <!-- Day Number -->
+                  <div class="text-sm font-bold text-white" x-text="day && day.date.split('-')[2]"></div>
+                  
+                  <!-- Hover Tooltip -->
+                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10 pointer-events-none">
+                    <div class="bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg whitespace-nowrap">
+                      <div class="font-semibold mb-1" x-text="day && formatDate(day.date)"></div>
+                      <div x-text="day && `✅ ${day.tasks_completed} / ${day.tasks_total} tasks (${day.completion_percentage.toFixed(0)}%)`"></div>
+                      <div x-text="day && `⭐ ${day.daily_xp_earned} XP earned`"></div>
+                      <div class="text-gray-400 mt-1">Click for details →</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Day Detail Modal -->
+  <div 
+    x-show="showDayDetail" 
+    x-cloak
+    @click.self="closeDayDetail()"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b">
+        <div>
+          <h2 class="text-2xl font-bold" x-text="selectedDate && formatDate(selectedDate)"></h2>
+          <p class="text-gray-600 text-sm mt-1">Daily Progress Details</p>
+        </div>
+        <button 
+          @click="closeDayDetail()"
+          class="text-gray-400 hover:text-gray-600 text-2xl">
+          ✕
+        </button>
+      </div>
+      
+      <!-- Loading State -->
+      <div x-show="isLoadingDetail" class="p-6 flex justify-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+      
+      <!-- Modal Content -->
+      <div x-show="!isLoadingDetail && dayDetailData" class="p-6 space-y-6">
+        
+        <!-- Summary Stats -->
+        <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Tasks Completed:</span>
+            <span class="font-semibold" x-text="dayDetailData && `${dayDetailData.tasks_completed} / ${dayDetailData.tasks_total}`"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Completion Rate:</span>
+            <span class="font-semibold" x-text="dayDetailData && `${dayDetailData.completion_percentage.toFixed(1)}%`"></span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">XP Earned:</span>
+            <span class="font-semibold text-purple-600" x-text="dayDetailData && `${dayDetailData.daily_xp_earned} XP`"></span>
+          </div>
+        </div>
+        
+        <!-- Completed Tasks List -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3">✅ Completed Tasks</h3>
+          
+          <!-- No tasks message -->
+          <div x-show="dayDetailData && dayDetailData.tasks_completed === 0" class="text-gray-500 text-center py-8">
+            No tasks completed on this day
+          </div>
+          
+          <!-- Tasks list (if available from API) -->
+          <div x-show="dayDetailData && dayDetailData.tasks_completed > 0" class="space-y-2">
+            <div class="text-gray-600 text-sm mb-2">
+              Great work! You completed <span class="font-semibold" x-text="dayDetailData && dayDetailData.tasks_completed"></span> task(s) on this day.
+            </div>
+            
+            <!-- Note: If your API includes completed_tasks array, you can display them here -->
+            <!-- <template x-if="dayDetailData && dayDetailData.completed_tasks">
+              <template x-for="task in dayDetailData.completed_tasks" :key="task.id">
+                <div class="border border-gray-200 rounded-lg p-3">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="font-medium" x-text="task.title"></div>
+                      <div class="text-sm text-gray-600 mt-1" x-text="task.description"></div>
+                      <div class="flex gap-2 mt-2">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded" x-text="task.priority"></span>
+                        <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded" x-text="task.urgency"></span>
+                      </div>
+                    </div>
+                    <div class="text-purple-600 font-semibold" x-text="`${task.custom_xp || 0} XP`"></div>
+                  </div>
+                </div>
+              </template>
+            </template> -->
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="p-6 border-t">
+        <button 
+          @click="closeDayDetail()"
+          class="w-full bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/history.js"></script>
+
+<style>
+[x-cloak] { display: none !important; }
+</style>
+
+{% endblock %}
