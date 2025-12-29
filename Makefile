@@ -1,4 +1,4 @@
-.PHONY: install test test-unit test-integration test-e2e lint format type-check security run config-check help
+.PHONY: install test test-unit test-integration test-e2e lint format type-check security run config-check build-css help
 
 help:
 	@echo "Day-Play Development Commands"
@@ -11,8 +11,7 @@ help:
 	@echo "make lint            - Check code with ruff"
 	@echo "make format          - Format code with ruff"
 	@echo "make type-check      - Run mypy type checking"
-	@echo "make security        - Run security scans"
-	@echo "make config-check    - Validate all environment configs"
+	@echo "make build-css       - Build Tailwind CSS"
 	@echo "make run             - Run development server"
 	@echo "make all             - Run full CI pipeline locally"
 
@@ -48,6 +47,9 @@ config-check:
 	@ENVIRONMENT=development uv run python -c "from day_play.config.settings import settings; print(f'✓ Development config valid: {settings.app_name}')"
 	@ENVIRONMENT=testing uv run python -c "from day_play.config.settings import settings; print(f'✓ Testing config valid: {settings.app_name}')"
 	@echo "⚠ Production config requires DATABASE_URL env var - skipping validation"
+
+build-css:
+	npx @tailwindcss/cli --input src/day_play/entrypoints/web/static/css/main.css --output /tmp/main.css && cp /tmp/main.css src/day_play/entrypoints/web/static/css/main.css
 
 run:
 	uv run uvicorn day_play.entrypoints.api.main:app --reload
