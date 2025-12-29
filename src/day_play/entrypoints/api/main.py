@@ -131,7 +131,7 @@ def create_app() -> FastAPI:
         """Render history page."""
         # TODO: Create history.html template
         return templates.TemplateResponse(
-            "dashboard.html",
+            "history.html",
             {"request": request}
         )
 
@@ -140,9 +140,10 @@ def create_app() -> FastAPI:
         """Render settings page."""
         # TODO: Create settings.html template
         return templates.TemplateResponse(
-            "dashboard.html",
+            "settings.html",
             {"request": request}
         )
+
 
     return app
 

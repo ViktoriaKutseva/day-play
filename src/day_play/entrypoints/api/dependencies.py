@@ -11,6 +11,7 @@ from day_play.business.progress_tracker import ProgressTracker
 from day_play.business.recurrence_engine import RecurrenceEngine
 from day_play.business.task_manager import TaskManager
 from day_play.integrations.database.database import SessionLocal
+from day_play.integrations.database.repositories import daily_progress_repository
 from day_play.integrations.database.repositories.achievement_repository import (
     SQLAlchemyAchievementRepository,
 )
@@ -216,6 +217,7 @@ def get_task_manager(
     gamification: GamificationEngine = Depends(get_gamification_engine),
     recurrence: RecurrenceEngine = Depends(get_recurrence_engine),
     achievement_manager: AchievementManager = Depends(get_achievement_manager),
+    daily_progress_repository: SQLAlchemyDailyProgressRepository = Depends(get_daily_progress_repository),
 ) -> TaskManager:
     """Get TaskManager instance.
 
@@ -242,6 +244,7 @@ def get_task_manager(
         gamification=gamification,
         recurrence=recurrence,
         achievement_manager=achievement_manager,
+        daily_progress_repository=daily_progress_repository,
     )
 
 

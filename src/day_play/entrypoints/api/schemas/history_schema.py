@@ -88,16 +88,36 @@ class HistoryResponse(BaseModel):
     ) -> "HistoryResponse":
         """Create HistoryResponse from a list of DailyProgress entities.
 
+        Fills missing days in the date range with empty progress entries to ensure
+        the frontend calendar grid displays correctly.
+
         Args:
             start_date: Start of the date range
             end_date: End of the date range
-            entries: List of DailyProgress entities
+            entries: List of DailyProgress entities (may have gaps)
 
         Returns:
-            HistoryResponse with aggregated stats
+            HistoryResponse with aggregated stats and complete date range
         """
-        daily_responses = [DailyProgressResponse.from_entity(entry) for entry in entries]
+        # Create a map of existing entries by date for quick lookup
+        from datetime import timedelta
+        
+        entries_by_date = {entry.date: entry for entry in entries}
+        
+        # Fill complete date range with existing or empty entries
+        daily_responses = []
+        current_date = start_date
+        while current_date <= end_date:
+            if current_date in entries_by_date:
+                daily_responses.append(
+                    DailyProgressResponse.from_entity(entries_by_date[current_date])
+                )
+            else:
+                # Create empty entry for missing days
+                daily_responses.append(DailyProgressResponse.empty(current_date))
+            current_date += timedelta(days=1)
 
+        # Calculate aggregates from actual entries (not empty ones)
         total_tasks_completed = sum(entry.tasks_completed for entry in entries)
         total_xp_earned = sum(entry.daily_xp_earned for entry in entries)
         average_completion = (

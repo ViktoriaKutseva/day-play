@@ -56,7 +56,7 @@ def redeem_prize(
 
 @router.get("/achievements", response_model=list[AchievementResponse])
 def get_achievements(
-    user_id: int = Query(description="User ID"),
+    user_id: int = Query(default=1, description="User ID"),
     is_unlocked: bool | None = Query(default=None, description="Filter by unlock status"),
     achievement_manager: AchievementManager = Depends(get_achievement_manager),
 ) -> list[AchievementResponse]:
@@ -84,7 +84,7 @@ def get_achievements(
 
 @router.get("/prizes", response_model=list[PrizeResponse])
 def get_prizes(
-    user_id: int = Query(description="User ID"),
+    user_id: int = Query(default=1, description="User ID"),
     is_redeemed: bool = Query(default=False, description="Filter by redeemed status"),
     prize_manager: PrizeManager = Depends(get_prize_manager),
     user_repository: SQLAlchemyUserRepository = Depends(get_user_repository),
