@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, case
 from sqlalchemy.orm import Session
 
 from day_play.integrations.database.models import Task as TaskORM
@@ -148,9 +148,23 @@ class SQLAlchemyTaskRepository:
             user_id: User's unique identifier
 
         Returns:
-            List of all tasks for the user
+            List of all tasks for the user, sorted by status (pending first, then in_progress, then completed) then by due date
         """
-        stmt = select(TaskORM).where(TaskORM.user_id == user_id)  # type: ignore[arg-type]
+        stmt = (
+            select(TaskORM)
+            .where(TaskORM.user_id == user_id)  # type: ignore[arg-type]
+            .order_by(
+                case(
+                    (TaskORM.status == 'pending', 0),
+                    (TaskORM.status == 'in_progress', 1),
+                    (TaskORM.status == 'completed', 2)
+                )
+            )  # Pending first, then in_progress, then completed
+            .order_by(TaskORM.due_date.nulls_last())  # Then by due date (nulls last)
+            .order_by(TaskORM.priority.desc())  # Higher priority first
+            .order_by(TaskORM.urgency.desc())  # Higher urgency first
+            .order_by(TaskORM.created_at.desc())  # Newest first as tiebreaker
+        )
         orm_tasks = self._session.execute(stmt).scalars().all()
 
         return [self._to_domain(orm_task) for orm_task in orm_tasks]

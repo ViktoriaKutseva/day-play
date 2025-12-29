@@ -83,12 +83,16 @@ class SQLAlchemyDailyProgressRepository:
             start_date: Start date of the range
             end_date: End date of the range
         Returns:
-            List of DailyProgress entries for the given user within the date range
+            List of DailyProgress entries for the given user within the date range, ordered by date ascending
         """
-        stmt = select(DailyProgressORM).where(
-            DailyProgressORM.user_id == user_id,
-            DailyProgressORM.date >= start_date,
-            DailyProgressORM.date <= end_date,
+        stmt = (
+            select(DailyProgressORM)
+            .where(
+                DailyProgressORM.user_id == user_id,
+                DailyProgressORM.date >= start_date,
+                DailyProgressORM.date <= end_date,
+            )
+            .order_by(DailyProgressORM.date.asc())
         )
         orm_progress_list = self._session.execute(stmt).scalars().all()
         return [self._to_domain(orm_progress) for orm_progress in orm_progress_list]
