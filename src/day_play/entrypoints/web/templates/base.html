@@ -1,129 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{% block title %}Day-Play{% endblock %} - Gamified Task Management</title>
-        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            'day-play-primary': '#3B82F6',  // Blue
-                            'day-play-secondary': '#10B981', // Green
-                            'day-play-accent': '#F59E0B',    // Amber
+<head>
+    <!-- Character encoding and viewport for mobile -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Page title - can be overridden by child templates -->
+    <title>{% block title %}Day-Play{% endblock %} - Gamified Task Management</title>
+
+    <!-- Favicon (optional - add later) -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
+    <!-- Tailwind CSS via CDN - for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Preload project font (place the font at /static/fonts/Mario-Kart-DS.ttf) -->
+    <link rel="preload" href="/static/fonts/Mario-Kart-DS.ttf" as="font" type="font/ttf" crossorigin>
+    <!-- Load font declarations from font.css -->
+    <link rel="stylesheet" href="/static/css/font.css">
+
+    <!-- Alpine.js via CDN - for interactivity -->
+    <!-- DEFER ensures Alpine loads after page content -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Custom Tailwind configuration (Day-Play theme) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        pixel: ["'Pixel'", 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+                    },
+                    colors: {
+                        'day-play-primary': '#35495E',
+                        'day-play-secondary': '#32C7E5',
+                        'day-play-accent': '#FF7E67',
+                        'day-play-bg': '#80ADE0',
+                        'day-play-surface': '#3B756D',
+                        'day-play-muted': '#ACE5E1',
+                        'day-play-white': '#f8f9fa',
+                        'day-play-yellow': '#ffe867'
+                    },
+                    boxShadow: {
+                        'glow-sm': '0 6px 18px rgba(59,130,246,0.18)',
+                        'glow-lg': '0 20px 40px rgba(124,58,237,0.18)'
+                    },
+                    keyframes: {
+                        'float': {
+                            '0%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                            '100%': { transform: 'translateY(0px)' }
+                        },
+                        'pulse-accent': {
+                            '0%': { transform: 'scale(1)', opacity: '1' },
+                            '70%': { transform: 'scale(1.04)', opacity: '.85' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
                         }
+                    },
+                    animation: {
+                        'float-slow': 'float 6s ease-in-out infinite',
+                        'pulse-accent-slow': 'pulse-accent 1.8s ease-in-out infinite'
                     }
                 }
             }
-        </script>
-        
-        <!-- Custom CSS (if needed) -->
-        <link rel="stylesheet" href="/static/css/main.css">
-        
-        <!-- Block for additional head content from child templates -->
-        {% block head %}{% endblock %}
-    </head>
+        }
+    </script>
 
-    <body class="bg-gray-50 min-h-screen flex flex-col">
-        <!-- Header with Navigation -->
-        <header class="bg-white shadow-sm">
-            <nav class="container mx-auto px-4 py-3" x-data="{ mobileMenuOpen: false }">
-                <div class="flex items-center justify-between">
-                    <!-- Logo/Brand -->
-                    <div class="flex items-center space-x-2">
-                        <span class="text-2xl">🎮</span>
-                        <span class="text-xl font-bold text-day-play-primary">
-                            Day-Play
-                        </span>
-                    </div>
-                    
-                    <!-- Desktop Navigation -->
-                    <div class="hidden md:flex space-x-6">
-                        <a href="/" class="text-gray-700 hover:text-day-play-primary transition">
-                            Dashboard
-                        </a>
-                        <a href="/history" class="text-gray-700 hover:text-day-play-primary transition">
-                            History
-                        </a>
-                        <a href="/settings" class="text-gray-700 hover:text-day-play-primary transition">
-                            Settings
-                        </a>
-                    </div>
-                    
-                    <!-- Mobile Menu Button -->
-                    <button 
-                        @click="mobileMenuOpen = !mobileMenuOpen"
-                        class="md:hidden text-gray-700"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
+    <!-- Block for additional head content from child templates -->
+    {% block head %}{% endblock %}
+</head>
+
+<body class="font-pixel bg-day-play-bg min-h-screen flex flex-col">
+    <!-- Header with Navigation -->
+    <header class="bg-day-play-bg shadow-sm">
+        <nav class="container mx-auto px-4 py-3" x-data="{ mobileMenuOpen: false }">
+            <div class="flex items-center justify-between">
+                <!-- Logo/Brand -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">🎮</span>
+                    <span class="text-xl font-bold text-day-play-primary">
+                        Day-Play
+                    </span>
                 </div>
                 
-                <!-- Mobile Navigation Menu -->
-                <div x-show="mobileMenuOpen" 
-                    x-transition
-                    class="md:hidden mt-4 space-y-2">
-                    <a href="/" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="text-day-play-surface hover:text-day-play-primary transition">
                         Dashboard
                     </a>
-                    <a href="/history" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                    <a href="/history" class="text-day-play-surface hover:text-day-play-primary transition">
                         History
                     </a>
-                    <a href="/settings" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                    <a href="/tasks" class="text-day-play-surface hover:text-day-play-primary transition">
+                        Tasks
+                    </a>
+                    <a href="/settings" class="text-day-play-surface hover:text-day-play-primary transition">
                         Settings
                     </a>
                 </div>
-            </nav>
-        </header>
-        
-        <!-- Main Content Area -->
-        <main class="flex-grow container mx-auto px-4 py-8">
-            <!-- Flash messages (optional - for notifications) -->
-            {% block messages %}
-                {% if messages %}
-                    <div class="mb-4 space-y-2">
-                        {% for message in messages %}
-                            <div class="p-4 rounded-lg bg-blue-50 text-blue-800 border border-blue-200">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endblock %}
-            
-            <!-- Page-specific content goes here -->
-            {% block content %}
-                <div class="text-center py-20">
-                    <h1 class="text-3xl font-bold text-gray-800">
-                        Welcome to Day-Play!
-                    </h1>
-                    <p class="text-gray-600 mt-2">
-                        This is the base template. Child templates override this content.
-                    </p>
-                </div>
-            {% endblock %}
-        </main>
-        
-        <!-- Footer -->
-        <footer class="bg-gray-800 text-gray-300 py-6 mt-auto">
-            <div class="container mx-auto px-4 text-center">
-                <p>&copy; 2025 Day-Play - Gamified Task Management</p>
-                <div class="mt-2 space-x-4">
-                    <a href="#" class="hover:text-white transition">About</a>
-                    <a href="#" class="hover:text-white transition">Privacy</a>
-                    <a href="#" class="hover:text-white transition">Terms</a>
-                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button 
+                    @click="mobileMenuOpen = !mobileMenuOpen"
+                    class="md:hidden text-gray-700"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
             </div>
-        </footer>
+            
+            <!-- Mobile Navigation Menu -->
+            <div x-show="mobileMenuOpen" 
+                 x-transition
+                 class="md:hidden mt-4 space-y-2">
+                <a href="/" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                    Dashboard
+                </a>
+                <a href="/history" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                    History
+                </a>
+                <a href="/settings" class="block py-2 text-gray-700 hover:text-day-play-primary">
+                    Settings
+                </a>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- Flash messages (optional - for notifications) -->
+        {% block messages %}
+            {% if messages %}
+                <div class="mb-4 space-y-2">
+                    {% for message in messages %}
+                        <div class="p-4 rounded-lg bg-blue-50 text-blue-800 border border-blue-200">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endblock %}
         
-        <!-- Block for additional scripts from child templates -->
-        {% block scripts %}{% endblock %}
-    </body>
+        <!-- Page-specific content goes here -->
+        {% block content %}
+            <div class="text-center py-20">
+                <h1 class="text-3xl font-bold text-gray-800">
+                    Welcome to Day-Play!
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    This is the base template. Child templates override this content.
+                </p>
+            </div>
+        {% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-day-play-accent text-day-play-surface py-6 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 Day-Play - Gamified Task Management</p>
+            <div class="mt-2 space-x-4">
+                <a href="#" class="hover:text-white transition">About</a>
+                <a href="#" class="hover:text-white transition">Privacy</a>
+                <a href="#" class="hover:text-white transition">Terms</a>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Block for additional scripts from child templates -->
+    {% block scripts %}{% endblock %}
+</body>
 </html>

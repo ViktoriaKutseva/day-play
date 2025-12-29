@@ -7,22 +7,20 @@
 <div class="max-w-6xl mx-auto" x-data="dashboardComponent()">
   <!-- Page Header -->
   <div class="mb-8">
-    <h1 class="text-4xl font-bold text-gray-800 mb-2">
-      🎮 Your Dashboard
+    <h1 class="text-4xl font-bold text-day-play-bg mb-2">
     </h1>
-    <p class="text-gray-600">
-      Track your progress, manage tasks, and level up!
+    <p class="text-day-play-bg">
     </p>
   </div>
   
   <!-- Loading State -->
   <div x-show="loading" class="text-center py-20">
-    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-    <p class="mt-4 text-gray-600">Loading your dashboard...</p>
+    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-day-play-primary border-t-transparent"></div>
+    <p class="mt-4 text-day-play-bg">Loading your dashboard...</p>
   </div>
   
   <!-- Error State -->
-  <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+  <div x-show="error" class=  "bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
     <p class="text-red-700" x-text="error"></p>
     <button 
       @click="init()"
@@ -36,19 +34,17 @@
   <div x-show="!loading && !error" x-transition>
     
     <!-- Progress Bars Section -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 class="text-2xl font-bold mb-4 text-gray-800">📊 Your Progress</h2>
-      
+    <div class="bg-day-play-white rounded-lg shadow-glow-sm p-6 mb-6">      
       <!-- Daily Progress -->
       <div class="mb-6">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-sm font-medium text-gray-700">Daily Progress</span>
-          <span class="text-sm font-medium text-blue-600" 
+          <span class="text-sm font-medium text-day-play-bg">Daily Progress</span>
+          <span class="text-sm font-medium text-day-play-bg" 
                 x-text="`${Math.round(dailyProgress)}%`">
           </span>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-          <div class="bg-blue-500 h-4 rounded-full transition-all duration-500"
+        <div class="w-full bg-day-play-primary rounded-full h-4 overflow-hidden">
+          <div class="bg-day-play-accent h-4 rounded-full transition-all duration-500"
                :style="`width: ${dailyProgress}%`">
           </div>
         </div>
@@ -57,26 +53,26 @@
       <!-- Level Progress -->
       <div class="mb-6">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-sm font-medium text-gray-700">
+          <span class="text-sm font-medium text-day-play-bg">
             Level <span x-text="level"></span> Progress
           </span>
-          <span class="text-sm font-medium text-green-600" 
+          <span class="text-sm font-medium text-day-play-bg" 
                 x-text="`${currentXP} / ${nextLevelXP} XP`">
           </span>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-          <div class="bg-green-500 h-4 rounded-full transition-all duration-500"
+        <div class="w-full bg-day-play-primary rounded-full h-4 overflow-hidden">
+          <div class="bg-day-play-accent h-4 rounded-full transition-all duration-500"
                :style="`width: ${levelProgress}%`">
           </div>
         </div>
       </div>
       
       <!-- Level Display -->
-      <div class="text-center p-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
-        <div class="text-3xl font-bold text-purple-700">
+      <div class="text-center p-4 bg-gradient-to-r from-day-play-secondary to-day-play-bg rounded-lg shadow-glow-sm">
+        <div class="text-3xl font-bold text-day-play-white">
           Level <span x-text="level"></span>
         </div>
-        <div class="text-sm text-gray-600 mt-1">
+        <div class="text-sm text-day-play-white mt-1">
           <span x-text="currentXP"></span> XP | 
           <span x-text="nextLevelXP - currentXP"></span> XP to next level
         </div>
@@ -84,19 +80,19 @@
     </div>
     
     <!-- Upcoming Tasks Section -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 class="text-2xl font-bold mb-4 text-gray-800">📋 Upcoming Tasks</h2>
+    <div class="bg-day-play-white rounded-lg shadow-glow-sm p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-day-play-bg">📋 Upcoming Tasks</h2>
       
-      <div x-show="tasks.length === 0" class="text-gray-500 text-center py-4">
+      <div x-show="tasks.length === 0" class="text-day-play-bg text-center py-4">
         No tasks for today. Add one below! 🎯
       </div>
       
-      <div class="space-y-3">
+      <div class="space-y-3 bg-gradient-to-r from-amber-50 to-yellow-50" >
         <template x-for="task in tasks" :key="task.id">
-          <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div class="border border-day-play-accent rounded-lg p-4 hover:shadow-glow-sm transition-shadow">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="font-semibold text-gray-800" x-text="task.title"></h3>
-              <span class="text-sm font-medium text-purple-600" 
+              <h3 class="font-semibold text-day-play-bg" x-text="task.title"></h3>
+              <span class="text-sm font-medium text-day-play-bg" 
                     x-text="`${task.xp_value} XP`">
               </span>
             </div>
@@ -104,24 +100,24 @@
             <div class="flex gap-2 mb-2">
               <span class="px-2 py-1 rounded text-xs font-medium"
                     :class="{
-                      'bg-red-100 text-red-700': task.priority === 'high',
-                      'bg-yellow-100 text-yellow-700': task.priority === 'medium',
-                      'bg-green-100 text-green-700': task.priority === 'low'
+                      'bg-day-play-accent text-day-play-white': task.priority === 'high',
+                      'bg-day-play-yellow text-day-play-white': task.priority === 'medium',
+                      'bg-day-play-secondary text-day-play-white': task.priority === 'low'
                     }"
-                    x-text="`Priority: ${task.priority}`">
+                    x-text="`${task.priority}`">
               </span>
               
               <span class="px-2 py-1 rounded text-xs font-medium"
                     :class="{
-                      'bg-red-100 text-red-700': task.urgency === 'high',
-                      'bg-yellow-100 text-yellow-700': task.urgency === 'medium',
-                      'bg-blue-100 text-blue-700': task.urgency === 'low'
+                      'bg-day-play-accent text-day-play-white': task.urgency === 'high',
+                      'bg-day-play-yellow text-day-play-white': task.urgency === 'medium',
+                      'bg-day-play-secondary text-day-play-white': task.urgency === 'low'
                     }"
-                    x-text="`Urgency: ${task.urgency}`">
+                    x-text="`${task.urgency}`">
               </span>
             </div>
             
-            <p x-show="task.due_date" class="text-sm text-gray-600">
+            <p x-show="task.due_date" class="text-sm text-day-play-bg">
               📅 Due: <span x-text="new Date(task.due_date).toLocaleString()"></span>
             </p>
           </div>
@@ -130,22 +126,22 @@
     </div>
     
     <!-- Recent Achievements Section -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 class="text-2xl font-bold mb-4 text-gray-800">🏆 Recent Achievements</h2>
+    <div class="bg-white rounded-lg shadow-glow-sm p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-day-play-bg">🏆 Recent Achievements</h2>
       
       <div x-show="achievements.length === 0" 
-           class="text-gray-500 text-center py-4">
+           class="text-day-play-muted text-center py-4">
         Complete tasks to unlock achievements! 🎯
       </div>
       
       <div class="space-y-3">
         <template x-for="achievement in achievements" :key="achievement.id">
-          <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div class="flex items-start gap-3 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-day-play-accent shadow-glow-sm">
             <span class="text-3xl" x-text="achievement.icon || '🏆'"></span>
             <div class="flex-1">
-              <h3 class="font-semibold text-gray-800" x-text="achievement.name"></h3>
-              <p class="text-sm text-gray-600" x-text="achievement.description"></p>
-              <p class="text-xs text-gray-500 mt-1">
+              <h3 class="font-semibold text-day-play-bg" x-text="achievement.name"></h3>
+              <p class="text-sm text-day-play-muted" x-text="achievement.description"></p>
+              <p class="text-xs text-day-play-muted mt-1">
                 Unlocked: <span x-text="new Date(achievement.unlocked_at).toLocaleDateString()"></span>
               </p>
             </div>
@@ -154,132 +150,309 @@
       </div>
     </div>
     
-    <!-- Quick Add Task Section -->
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-2xl font-bold mb-4 text-gray-800">➕ Quick Add Task</h2>
-      
-      <form @submit.prevent="addTask()" class="space-y-4">
-        <div>
-          <input 
-            type="text"
-            x-model="newTaskTitle"
-            placeholder="What needs to be done?"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-        </div>
-        
-        <button 
-          type="submit"
-          class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          :disabled="loading || !newTaskTitle.trim()"
-        >
-          <span x-show="!loading">Add Task</span>
-          <span x-show="loading">Adding...</span>
-        </button>
-      </form>
-      
-      <div x-show="taskAdded" 
-           x-transition
-           class="mt-4 p-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
-        ✅ Task added successfully!
-      </div>
+    <!-- Create Task Button -->
+    <div class="bg-white rounded-lg shadow-glow-sm p-6 mb-6">
+      <button 
+        @click="showCreateModal = true"
+        class="w-full bg-gradient-to-r from-day-play-bg to-day-play-secondary hover:shadow-glow-lg text-white px-6 py-4 rounded-lg font-semibold transition-all text-lg animate-pulse-accent-slow">
+        ➕ Create New Task
+      </button>
     </div>
     
   </div>
+  
+  <!-- Create Task Modal -->
+  <div x-show="showCreateModal" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+       @click.self="showCreateModal = false"
+       style="display: none;"
+       x-data="taskFormComponent()">
+    
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+         @click.stop>
+      
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center p-6 border-b">
+        <h2 class="text-2xl font-bold text-day-play-bg">➕ Create New Task</h2>
+        <button 
+          @click="closeModal()"
+          class="text-day-play-muted hover:text-day-play-bg text-2xl">
+          ✕
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <!-- Success Message -->
+        <div x-show="submitSuccess" x-transition 
+             class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          ✅ Task created successfully!
+        </div>
+        
+        <!-- Error Message -->
+        <div x-show="submitError" x-transition
+             class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          ❌ <span x-text="submitError"></span>
+        </div>
+        
+        <form @submit.prevent="submitForm()" class="space-y-6">
+          
+          <!-- BASIC INFORMATION -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-day-play-bg">Basic Information</h3>
+            
+            <!-- Title -->
+            <div>
+              <label class="block font-medium text-day-play-bg mb-2">
+                Task Title <span class="text-day-play-pink">*</span>
+              </label>
+              <input 
+                type="text"
+                x-model="formData.title"
+                placeholder="What do you need to do?"
+                maxlength="255"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-day-play-primary"
+                :class="{'border-day-play-pink': errors.title}">
+              
+              <div class="flex justify-between items-center mt-1">
+                <span x-show="errors.title" class="text-red-500 text-sm" x-text="errors.title"></span>
+                <span class="text-gray-500 text-sm ml-auto" x-text="titleLength + '/255'"></span>
+              </div>
+            </div>
+            
+            <!-- Description -->
+            <div>
+              <label class="block font-medium text-day-play-bg mb-2">
+                Description (optional)
+              </label>
+              <textarea 
+                x-model="formData.description"
+                placeholder="Add more details..."
+                rows="3"
+                maxlength="1000"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-day-play-primary"
+                :class="{'border-day-play-pink': errors.description}">
+              </textarea>
+              
+              <div class="flex justify-between items-center mt-1">
+                <span x-show="errors.description" class="text-red-500 text-sm" x-text="errors.description"></span>
+                <span class="text-gray-500 text-sm ml-auto" x-text="descriptionLength + '/1000'"></span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- TASK PRIORITY & URGENCY -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-day-play-bg">Task Priority & Urgency</h3>
+            
+            <!-- Priority -->
+            <div>
+              <label class="block font-medium text-day-play-bg mb-2">
+                Priority <span class="text-day-play-pink">*</span>
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <button 
+                  @click="formData.priority = 'low'"
+                  class="px-4 py-3 rounded-lg font-medium transition-colors"
+                  :class="formData.priority === 'low' ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'"
+                  type="button">
+                  Low (5 XP)
+                </button>
+                
+                <button 
+                  @click="formData.priority = 'medium'"
+                  class="px-4 py-3 rounded-lg font-medium transition-colors"
+                  :class="formData.priority === 'medium' ? 'bg-yellow-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'"
+                  type="button">
+                  Medium (10 XP)
+                </button>
+                
+                <button 
+                  @click="formData.priority = 'high'"
+                  class="px-4 py-3 rounded-lg font-medium transition-colors"
+                  :class="formData.priority === 'high' ? 'bg-red-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'"
+                  type="button">
+                  High (15 XP)
+                </button>
+              </div>
+            </div>
+            
+            <!-- Urgency -->
+            <div>
+              <label class="block font-medium text-day-play-bg mb-2">
+                Urgency <span class="text-day-play-pink">*</span>
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <button 
+                  @click="formData.urgency = 'low'"
+                  class="px-4 py-3 rounded-lg font-medium transition-colors"
+                  :class="formData.urgency === 'low' ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'"
+                  type="button">
+                  Low (5 XP)
+                </button>
+                
+                <button 
+                  @click="formData.urgency = 'medium'"
+                  class="px-4 py-3 rounded-lg font-medium transition-colors"
+                  :class="formData.urgency === 'medium' ? 'bg-yellow-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'"
+                  type="button">
+                  Medium (10 XP)
+                </button>
+                
+                <button 
+                  @click="formData.urgency = 'high'"
+                  class="px-4 py-3 rounded-lg font-medium transition-colors"
+                  :class="formData.urgency === 'high' ? 'bg-red-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'"
+                  type="button">
+                  High (15 XP)
+                </button>
+              </div>
+            </div>
+            
+            <!-- XP Preview -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-day-play-purple rounded-lg p-4 shadow-glow-sm">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-day-play-bg">Calculated XP:</span>
+                <span class="text-2xl font-bold text-day-play-purple" x-text="calculatedXp + ' XP'"></span>
+              </div>
+              <p class="text-sm text-day-play-muted mt-1" x-text="xpBreakdown"></p>
+            </div>
+          </div>
+          
+          <!-- SCHEDULING & RECURRENCE -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-day-play-bg">Scheduling & Recurrence</h3>
+            
+            <!-- Due Date -->
+            <div>
+              <label class="block font-medium text-day-play-bg mb-2">
+                Due Date (optional)
+              </label>
+              <input 
+                type="datetime-local"
+                x-model="formData.due_date"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-day-play-primary"
+                :class="{'border-day-play-pink': errors.due_date}"
+                :min="new Date().toISOString().slice(0, 16)">
+              <span x-show="errors.due_date" class="text-red-500 text-sm mt-1" x-text="errors.due_date"></span>
+            </div>
+            
+            <!-- Recurrence Pattern -->
+            <div>
+              <label class="block font-medium text-day-play-bg mb-2">
+                Recurrence Pattern
+              </label>
+              <div class="grid grid-cols-4 gap-2">
+                <button 
+                  @click="formData.recurrence_pattern = 'none'"
+                  :class="formData.recurrence_pattern === 'none' ? 'bg-day-play-primary text-white' : 'bg-gray-200 hover:bg-gray-300 text-day-play-bg'"
+                  class="px-3 py-2 rounded-lg transition-colors font-medium"
+                  type="button">
+                  None
+                </button>
+                
+                <button 
+                  @click="formData.recurrence_pattern = 'daily'"
+                  :class="formData.recurrence_pattern === 'daily' ? 'bg-day-play-primary text-white' : 'bg-gray-200 hover:bg-gray-300 text-day-play-bg'"
+                  class="px-3 py-2 rounded-lg transition-colors font-medium"
+                  type="button">
+                  Daily
+                </button>
+                
+                <button 
+                  @click="formData.recurrence_pattern = 'weekly'"
+                  :class="formData.recurrence_pattern === 'weekly' ? 'bg-day-play-primary text-white' : 'bg-gray-200 hover:bg-gray-300 text-day-play-bg'"
+                  class="px-3 py-2 rounded-lg transition-colors font-medium"
+                  type="button">
+                  Weekly
+                </button>
+                
+                <button 
+                  @click="formData.recurrence_pattern = 'monthly'"
+                  :class="formData.recurrence_pattern === 'monthly' ? 'bg-day-play-primary text-white' : 'bg-gray-200 hover:bg-gray-300 text-day-play-bg'"
+                  class="px-3 py-2 rounded-lg transition-colors font-medium"
+                  type="button">
+                  Monthly
+                </button>
+              </div>
+              
+              <!-- On-Complete Checkbox -->
+              <div x-show="formData.recurrence_pattern !== 'none'" x-transition class="mt-3">
+                <label class="flex items-start space-x-2">
+                  <input 
+                    type="checkbox" 
+                    x-model="formData.recurrence_rule_on_complete"
+                    class="mt-1 rounded">
+                  <div>
+                    <span class="text-sm font-medium text-day-play-bg">Regenerate only after completion</span>
+                    <p class="text-xs text-day-play-muted mt-1">
+                      When checked, task won't recur automatically - only after you mark it complete
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- CUSTOM REWARDS -->
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold text-day-play-bg">Custom Rewards (Advanced)</h3>
+            
+            <label class="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                x-model="showCustomXp"
+                class="rounded">
+              <span class="font-medium text-day-play-bg">Override XP calculation</span>
+            </label>
+            
+            <div x-show="showCustomXp" x-transition class="ml-6">
+              <input 
+                type="number"
+                x-model.number="formData.custom_xp"
+                placeholder="Enter custom XP"
+                min="0"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-day-play-primary"
+                :class="{'border-day-play-pink': errors.custom_xp}">
+              
+              <p class="text-sm text-day-play-muted mt-1">
+                ℹ️ Custom XP will replace the calculated value
+              </p>
+              <span x-show="errors.custom_xp" class="text-red-500 text-sm" x-text="errors.custom_xp"></span>
+            </div>
+          </div>
+          
+          <!-- ACTION BUTTONS -->
+          <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button 
+              @click="closeModal()"
+              type="button"
+              class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-day-play-bg rounded-lg font-medium transition-colors"
+              :disabled="isSubmitting">
+              Cancel
+            </button>
+            
+            <button 
+              type="submit"
+              class="px-6 py-2 bg-gradient-to-r from-day-play-primary to-day-play-secondary hover:shadow-glow-lg text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isSubmitting">
+              <span x-text="submitButtonText"></span>
+            </button>
+          </div>
+          
+        </form>
+      </div>
+    </div>
+  </div>
+  
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-function dashboardComponent() {
-  return {
-    // State
-    loading: true,
-    error: null,
-    dailyProgress: 0,
-    levelProgress: 0,
-    level: 1,
-    currentXP: 0,
-    nextLevelXP: 100,
-    tasks: [],
-    achievements: [],
-    newTaskTitle: '',
-    taskAdded: false,
-    
-    // Initialize - runs when component loads
-    async init() {
-      try {
-        this.loading = true;
-        this.error = null;
-        
-        const response = await fetch('/api/dashboard?user_id=1');
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Update state with API data
-        this.dailyProgress = data.progress.daily_completion_percent;
-        this.levelProgress = data.progress.level_progress_percent;
-        this.level = data.user_level.current_level;
-        this.currentXP = data.user_level.total_xp;
-        this.nextLevelXP = data.user_level.xp_for_next_level;
-        this.tasks = data.upcoming_tasks;
-        this.achievements = data.recent_achievements;
-        
-        this.loading = false;
-      } catch (error) {
-        console.error('Failed to load dashboard:', error);
-        this.error = 'Failed to load dashboard data. Please refresh the page.';
-        this.loading = false;
-      }
-    },
-    
-    // Add new task
-    async addTask() {
-      if (!this.newTaskTitle.trim()) return;
-      
-      try {
-        this.loading = true;
-        
-        const response = await fetch('/api/tasks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: this.newTaskTitle,
-            priority: 'medium',
-            urgency: 'medium',
-            status: 'pending'
-          })
-        });
-        
-        if (!response.ok) throw new Error('Failed to create task');
-        
-        const newTask = await response.json();
-        this.tasks.push(newTask);
-        this.newTaskTitle = '';
-        this.taskAdded = true;
-        
-        setTimeout(() => { 
-          this.taskAdded = false; 
-        }, 3000);
-        
-        // Reload dashboard to refresh progress
-        await this.init();
-        
-      } catch (error) {
-        console.error('Failed to add task:', error);
-        this.error = 'Failed to add task. Please try again.';
-        this.loading = false;
-      }
-    }
-  }
-}
-</script>
+<script src="/static/js/components.js"></script>
+<script src="/static/js/dashboard.js"></script>
 {% endblock %}
 
