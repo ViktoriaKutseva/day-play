@@ -77,6 +77,7 @@ def task_manager(
     gamification_engine: GamificationEngine,
     recurrence_engine: RecurrenceEngine,
     achievement_manager: AchievementManager,
+    mock_daily_progress_repository: Mock,
 ) -> TaskManager:
     return TaskManager(
         task_repository=mock_task_repository,
@@ -84,6 +85,7 @@ def task_manager(
         gamification=gamification_engine,
         recurrence=recurrence_engine,
         achievement_manager=achievement_manager,
+        daily_progress_repository=mock_daily_progress_repository,
     )
 
 
@@ -334,7 +336,7 @@ class TestTaskManagerDeleteTask:
 
 class TestTaskManagerCompleteTask:
     def test_complete_task_awards_xp(
-        self, task_manager, mock_task_repository, mock_user_repository
+        self, task_manager, mock_task_repository, mock_user_repository, mock_daily_progress_repository
     ):
         task = Task(
             id=1,
@@ -350,6 +352,8 @@ class TestTaskManagerCompleteTask:
         mock_task_repository.update_task.return_value = task.model_copy(
             update={"status": TaskStatus.COMPLETED}
         )
+        mock_task_repository.get_tasks_for_today.return_value = [task]
+        mock_daily_progress_repository.create_or_update_progress.return_value = None
         completed_task, achievements = task_manager.complete_task(task.id, user.id)
         assert completed_task.status == TaskStatus.COMPLETED
         assert isinstance(achievements, list)
@@ -361,7 +365,7 @@ class TestTaskManagerCompleteTask:
         mock_user_repository.update_level.assert_not_called()
 
     def test_complete_task_updates_level_when_threshold_crossed(
-        self, task_manager, mock_task_repository, mock_user_repository
+        self, task_manager, mock_task_repository, mock_user_repository, mock_daily_progress_repository
     ):
         task = Task(
             id=1,
@@ -378,6 +382,8 @@ class TestTaskManagerCompleteTask:
         mock_task_repository.update_task.return_value = task.model_copy(
             update={"status": TaskStatus.COMPLETED}
         )
+        mock_task_repository.get_tasks_for_today.return_value = [task]
+        mock_daily_progress_repository.create_or_update_progress.return_value = None
         completed_task, achievements = task_manager.complete_task(task.id, user.id)
         assert completed_task.status == TaskStatus.COMPLETED
         assert isinstance(achievements, list)
@@ -389,7 +395,7 @@ class TestTaskManagerCompleteTask:
         mock_user_repository.update_level.assert_not_called()
 
     def test_complete_task_calculates_next_occurrence_for_recurring(
-        self, task_manager, mock_task_repository, mock_user_repository
+        self, task_manager, mock_task_repository, mock_user_repository, mock_daily_progress_repository
     ):
         task = Task(
             id=1,
@@ -406,6 +412,8 @@ class TestTaskManagerCompleteTask:
             update={"status": TaskStatus.COMPLETED}
         )
         mock_user_repository.update_xp.return_value = user
+        mock_task_repository.get_tasks_for_today.return_value = [task]
+        mock_daily_progress_repository.create_or_update_progress.return_value = None
         completed_task, achievements = task_manager.complete_task(task.id, task.user_id)
         assert completed_task.status == TaskStatus.COMPLETED
         assert isinstance(achievements, list)
@@ -438,7 +446,7 @@ class TestTaskManagerUndoTask:
     """Test suite for TaskManager undo_task method."""
 
     def test_undo_task_success(
-        self, task_manager, mock_task_repository, mock_user_repository
+        self, task_manager, mock_task_repository, mock_user_repository, mock_daily_progress_repository
     ):
         """Test successfully undoing a completed task."""
         completed_task = Task(
@@ -460,6 +468,8 @@ class TestTaskManagerUndoTask:
         mock_user_repository.update_xp.return_value = user.model_copy(
             update={"total_xp": 50}
         )
+        mock_task_repository.get_tasks_for_today.return_value = []
+        mock_daily_progress_repository.create_or_update_progress.return_value = None
 
         result = task_manager.undo_task(completed_task.id, user.id)
 
@@ -503,7 +513,7 @@ class TestTaskManagerUndoTask:
         mock_task_repository.update_task.assert_not_called()
 
     def test_undo_task_updates_level_when_xp_decreased(
-        self, task_manager, mock_task_repository, mock_user_repository
+        self, task_manager, mock_task_repository, mock_user_repository, mock_daily_progress_repository
     ):
         """Test that undoing a task recalculates user level."""
         completed_task = Task(
@@ -525,6 +535,8 @@ class TestTaskManagerUndoTask:
             update={"status": TaskStatus.PENDING, "completed_at": None}
         )
         mock_user_repository.update_xp.return_value = updated_user
+        mock_task_repository.get_tasks_for_today.return_value = []
+        mock_daily_progress_repository.create_or_update_progress.return_value = None
 
         task_manager.undo_task(completed_task.id, user.id)
 
