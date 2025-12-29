@@ -74,3 +74,10 @@ dmypy.json
 # Documentation builds
 docs/_build/
 site/
+
+# Web/JS/Playwright/Runtime files
+.playwright-mcp/
+node_modules/
+package-lock.json
+server.pid
+src/day_play/entrypoints/web/static/fonts/
