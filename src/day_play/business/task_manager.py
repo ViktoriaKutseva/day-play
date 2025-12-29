@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from loguru import logger
 
@@ -7,9 +7,10 @@ from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.interfaces import (
     TaskRepository,
     UserRepository,
+    DailyProgressRepository,
 )
 from day_play.business.recurrence_engine import RecurrenceEngine
-from day_play.models.entities import Achievement, Task
+from day_play.models.entities import Achievement, DailyProgress, Task
 from day_play.models.enums import RecurrencePattern, TaskStatus
 from day_play.models.exceptions import (
     TaskAlreadyCompletedError,
@@ -35,12 +36,14 @@ class TaskManager:
         gamification: GamificationEngine,
         recurrence: RecurrenceEngine,
         achievement_manager: 'AchievementManager',
+        daily_progress_repository: 'DailyProgressRepository',
     ) -> None:
         self._task_repository = task_repository
         self._user_repository = user_repository
         self._gamification = gamification
         self._recurrence = recurrence
         self._achievement_manager = achievement_manager
+        self._daily_progress_repository = daily_progress_repository
 
     def create_task(self, task: Task) -> Task:
         """Creates a new task and handles any initial gamification logic."""
@@ -227,6 +230,26 @@ class TaskManager:
             task = self._recurrence.calculate_next_occurrence(task)
 
             updated_task = self._task_repository.update_task(task)
+
+            # Update daily progress for today
+            today = date.today()
+            today_tasks = self._task_repository.get_tasks_for_today(user_id)
+            tasks_completed = sum(1 for t in today_tasks if t.is_completed())
+            tasks_total = len(today_tasks)
+            completion_percentage = (tasks_completed / tasks_total * 100) if tasks_total > 0 else 0.0
+            daily_xp_earned = sum(self._gamification.calculate_xp(t) for t in today_tasks if t.is_completed())
+
+            daily_progress = DailyProgress(
+                user_id=user_id,
+                date=today,
+                tasks_completed=tasks_completed,
+                tasks_total=tasks_total,
+                completion_percentage=completion_percentage,
+                daily_xp_earned=daily_xp_earned,
+            )
+            self._daily_progress_repository.create_or_update_progress(daily_progress)
+            logger.debug("Daily progress updated", user_id=user_id, date=today, tasks_completed=tasks_completed)
+
             logger.info(
                 "Task completed successfully",
                 task_id=task_id,
@@ -311,6 +334,26 @@ class TaskManager:
             task.next_occurrence = None
 
             updated_task = self._task_repository.update_task(task)
+
+            # Update daily progress for today
+            today = date.today()
+            today_tasks = self._task_repository.get_tasks_for_today(user_id)
+            tasks_completed = sum(1 for t in today_tasks if t.is_completed())
+            tasks_total = len(today_tasks)
+            completion_percentage = (tasks_completed / tasks_total * 100) if tasks_total > 0 else 0.0
+            daily_xp_earned = sum(self._gamification.calculate_xp(t) for t in today_tasks if t.is_completed())
+
+            daily_progress = DailyProgress(
+                user_id=user_id,
+                date=today,
+                tasks_completed=tasks_completed,
+                tasks_total=tasks_total,
+                completion_percentage=completion_percentage,
+                daily_xp_earned=daily_xp_earned,
+            )
+            self._daily_progress_repository.create_or_update_progress(daily_progress)
+            logger.debug("Daily progress updated after undo", user_id=user_id, date=today, tasks_completed=tasks_completed)
+
             logger.info(
                 "Task completion undone successfully",
                 task_id=task_id,
