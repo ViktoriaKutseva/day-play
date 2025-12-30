@@ -52,6 +52,6 @@ build-css:
 	npx @tailwindcss/cli --input src/day_play/entrypoints/web/static/css/main.css --output /tmp/main.css && cp /tmp/main.css src/day_play/entrypoints/web/static/css/main.css
 
 run:
-	uv run uvicorn day_play.entrypoints.api.main:app --reload
+	uv run uvicorn day_play.entrypoints.api.main:app --reload --port 8001
 
 all: format lint type-check config-check test security
