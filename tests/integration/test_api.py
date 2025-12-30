@@ -1,4 +1,5 @@
 import pytest
+from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -129,8 +130,8 @@ def test_list_tasks(client):
     assert response.status_code == 200
     tasks = response.json()
     assert len(tasks) == 2
-    assert tasks[0]["title"] == "Task 1"
-    assert tasks[1]["title"] == "Task 2"
+    titles = {t["title"] for t in tasks}
+    assert titles == {"Task 1", "Task 2"}
 
 
 def test_update_task(client):
@@ -427,9 +428,10 @@ def test_get_user_level(client):
 
 def test_dashboard_with_tasks(client):
     """Test dashboard includes task information."""
-    # Create some tasks
-    client.post("/api/tasks/", json={"title": "Dashboard Task 1"})
-    client.post("/api/tasks/", json={"title": "Dashboard Task 2"})
+    # Create some tasks with today's due date
+    today = datetime.now(UTC).isoformat()
+    client.post("/api/tasks/", json={"title": "Dashboard Task 1", "due_date": today})
+    client.post("/api/tasks/", json={"title": "Dashboard Task 2", "due_date": today})
 
     response = client.get("/api/dashboard", params={"user_id": 1})
 

@@ -218,6 +218,7 @@ def get_task_manager(
     recurrence: RecurrenceEngine = Depends(get_recurrence_engine),
     achievement_manager: AchievementManager = Depends(get_achievement_manager),
     daily_progress_repository: SQLAlchemyDailyProgressRepository = Depends(get_daily_progress_repository),
+    progress_tracker: ProgressTracker = Depends(get_progress_tracker),
 ) -> TaskManager:
     """Get TaskManager instance.
 
@@ -234,6 +235,8 @@ def get_task_manager(
         gamification: Engine for XP calculations
         recurrence: Engine for recurrence date calculations
         achievement_manager: Service for achievement checking
+        daily_progress_repository: Repository for daily progress data access
+        progress_tracker: Service for progress calculations
 
     Returns:
         TaskManager: Configured task management service
@@ -245,6 +248,7 @@ def get_task_manager(
         recurrence=recurrence,
         achievement_manager=achievement_manager,
         daily_progress_repository=daily_progress_repository,
+        progress_tracker=progress_tracker,
     )
 
 

@@ -51,13 +51,14 @@ class TaskRepository(Protocol):
             List of tasks for the given user
         """
         ...
-    def get_tasks_for_today(self, user_id: int) -> list[Task]:
-        """Get tasks for the current day for a given user.
+    def get_tasks_for_today(self, user_id: int, target_date: date | None = None) -> list[Task]:
+        """Get tasks for a specific day for a given user.
         Args:
             user_id: ID of the user whose tasks to retrieve
+            target_date: Date to filter tasks by (defaults to today)
 
         Returns:
-            List of tasks for the current day for the given user
+            List of tasks for the given day for the given user
         """
         ...
     def get_overdue_tasks(self, user_id: int) -> list[Task]:

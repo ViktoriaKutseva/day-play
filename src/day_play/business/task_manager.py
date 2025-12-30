@@ -1,8 +1,12 @@
 from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from day_play.business.achievement_manager import AchievementManager
+if TYPE_CHECKING:
+    from day_play.business.achievement_manager import AchievementManager
+    from day_play.business.progress_tracker import ProgressTracker
+
 from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.interfaces import (
     TaskRepository,
@@ -37,6 +41,7 @@ class TaskManager:
         recurrence: RecurrenceEngine,
         achievement_manager: 'AchievementManager',
         daily_progress_repository: 'DailyProgressRepository',
+        progress_tracker: 'ProgressTracker',
     ) -> None:
         self._task_repository = task_repository
         self._user_repository = user_repository
@@ -44,6 +49,21 @@ class TaskManager:
         self._recurrence = recurrence
         self._achievement_manager = achievement_manager
         self._daily_progress_repository = daily_progress_repository
+        self._progress_tracker = progress_tracker
+
+    def _update_daily_progress(self, user_id: int) -> None:
+        """Update daily progress for today based on current task state.
+        
+        This method recalculates and updates the daily progress record for today
+        by examining all tasks due today and their completion status.
+        
+        Args:
+            user_id: ID of the user whose progress to update
+        """
+        today = datetime.now(UTC).date()
+        daily_progress = self._progress_tracker.get_daily_progress(user_id, today)
+        self._daily_progress_repository.create_or_update_progress(daily_progress)
+        logger.debug("Daily progress updated", user_id=user_id, date=today, tasks_completed=daily_progress.tasks_completed, tasks_total=daily_progress.tasks_total)
 
     def create_task(self, task: Task) -> Task:
         """Creates a new task and handles any initial gamification logic."""
@@ -63,6 +83,11 @@ class TaskManager:
                 task = self._recurrence.calculate_next_occurrence(task)
 
             created_task = self._task_repository.create_task(task)
+            
+            # Update daily progress if task is due today
+            if created_task.due_date and created_task.due_date.date() == datetime.now(UTC).date():
+                self._update_daily_progress(created_task.user_id)
+            
             logger.info(
                 "Task created successfully",
                 task_id=created_task.id,
@@ -125,6 +150,10 @@ class TaskManager:
                 task = self._recurrence.calculate_next_occurrence(task)
 
             updated_task = self._task_repository.update_task(task)
+            
+            # Update daily progress for today
+            self._update_daily_progress(updated_task.user_id)
+            
             logger.info("Task updated successfully", task_id=updated_task.id)
             return updated_task
         except TaskNotFoundError:
@@ -148,7 +177,16 @@ class TaskManager:
                 logger.warning("Cannot delete: task not found", task_id=task_id)
                 raise TaskNotFoundError(f"Task with ID {task_id} not found")
 
+            # Store info before deletion
+            was_relevant_for_today = existing.due_date and existing.due_date.date() <= datetime.now(UTC).date()
+            user_id = existing.user_id
+            
             self._task_repository.delete_task(task_id)
+            
+            # Update daily progress if task was relevant for today's progress
+            if was_relevant_for_today:
+                self._update_daily_progress(user_id)
+            
             logger.info(
                 "Task deleted successfully", task_id=task_id, title=existing.title
             )
@@ -232,23 +270,7 @@ class TaskManager:
             updated_task = self._task_repository.update_task(task)
 
             # Update daily progress for today
-            today = date.today()
-            today_tasks = self._task_repository.get_tasks_for_today(user_id)
-            tasks_completed = sum(1 for t in today_tasks if t.is_completed())
-            tasks_total = len(today_tasks)
-            completion_percentage = (tasks_completed / tasks_total * 100) if tasks_total > 0 else 0.0
-            daily_xp_earned = sum(self._gamification.calculate_xp(t) for t in today_tasks if t.is_completed())
-
-            daily_progress = DailyProgress(
-                user_id=user_id,
-                date=today,
-                tasks_completed=tasks_completed,
-                tasks_total=tasks_total,
-                completion_percentage=completion_percentage,
-                daily_xp_earned=daily_xp_earned,
-            )
-            self._daily_progress_repository.create_or_update_progress(daily_progress)
-            logger.debug("Daily progress updated", user_id=user_id, date=today, tasks_completed=tasks_completed)
+            self._update_daily_progress(user_id)
 
             logger.info(
                 "Task completed successfully",
@@ -330,29 +352,12 @@ class TaskManager:
                     new_level=new_level,
                 )
                 self._user_repository.update_level(user_id, new_level)
-
             task.next_occurrence = None
 
             updated_task = self._task_repository.update_task(task)
 
             # Update daily progress for today
-            today = date.today()
-            today_tasks = self._task_repository.get_tasks_for_today(user_id)
-            tasks_completed = sum(1 for t in today_tasks if t.is_completed())
-            tasks_total = len(today_tasks)
-            completion_percentage = (tasks_completed / tasks_total * 100) if tasks_total > 0 else 0.0
-            daily_xp_earned = sum(self._gamification.calculate_xp(t) for t in today_tasks if t.is_completed())
-
-            daily_progress = DailyProgress(
-                user_id=user_id,
-                date=today,
-                tasks_completed=tasks_completed,
-                tasks_total=tasks_total,
-                completion_percentage=completion_percentage,
-                daily_xp_earned=daily_xp_earned,
-            )
-            self._daily_progress_repository.create_or_update_progress(daily_progress)
-            logger.debug("Daily progress updated after undo", user_id=user_id, date=today, tasks_completed=tasks_completed)
+            self._update_daily_progress(user_id)
 
             logger.info(
                 "Task completion undone successfully",
@@ -426,21 +431,22 @@ class TaskManager:
             )
             raise
 
-    def get_tasks_for_today(self, user_id: int) -> list[Task]:
+    def get_tasks_for_today(self, user_id: int, target_date: date | None = None) -> list[Task]:
         """
-        Get tasks due today or with no due date.
+        Get tasks for a specific day for a user.
 
         Args:
-            user_id: ID of user whose tasks to retrieve
+            user_id: User's unique identifier
+            target_date: Date to filter by (defaults to UTC today)
 
         Returns:
-            List of today's tasks
+            List of tasks for the given day
         """
-        logger.debug("Retrieving today's tasks", user_id=user_id)
+        logger.debug(f"Retrieving tasks for user {user_id} on {target_date or 'today'}")
 
         try:
-            tasks = self._task_repository.get_tasks_for_today(user_id)
-            logger.debug("Retrieved today's tasks", user_id=user_id, count=len(tasks))
+            tasks = self._task_repository.get_tasks_for_today(user_id, target_date)
+            logger.debug(f"Retrieved {len(tasks)} tasks", user_id=user_id)
             return tasks
         except Exception as e:
             logger.error(

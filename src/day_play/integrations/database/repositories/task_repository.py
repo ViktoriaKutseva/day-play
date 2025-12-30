@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, time
 
-from sqlalchemy import func, select, case
+from sqlalchemy import func, select, case, or_, and_
 from sqlalchemy.orm import Session
 
 from day_play.integrations.database.models import Task as TaskORM
@@ -168,38 +168,39 @@ class SQLAlchemyTaskRepository:
         orm_tasks = self._session.execute(stmt).scalars().all()
 
         return [self._to_domain(orm_task) for orm_task in orm_tasks]
-    def get_tasks_for_today(self, user_id: int) -> list[DomainTask]:
+    def get_tasks_for_today(self, user_id: int, target_date: date | None = None) -> list[DomainTask]:
         """
-        Get tasks due today or with no due date for a user.
-
-        This includes:
-        - Tasks with due_date = today
-        - Tasks with no due_date (None)
-        - Only non-completed tasks
-
-        Args:
-            user_id: User's unique identifier
-
-        Returns:
-            List of today's tasks
+        Get tasks for a specific date's progress calculation.
+        
+        Includes:
+        - Tasks due on target_date
+        - Overdue tasks (due before target_date and not completed)
+        - Tasks completed on target_date (even if due earlier)
+        
+        Excludes:
+        - Backlog tasks (no due date)
+        - Tasks due in the future
+        - Tasks completed before target_date
         """
-        today = datetime.now(timezone.utc).date()
-        today_start = datetime.combine(today, datetime.min.time())
-        today_end = datetime.combine(today, datetime.max.time())
+        if target_date is None:
+            target_date = datetime.now(timezone.utc).date()
 
+        # Use func.date for SQLite compatibility
         stmt = select(TaskORM).where(
-            TaskORM.user_id == user_id,  # type: ignore[arg-type]
-            TaskORM.status != TaskStatus.COMPLETED,  # type: ignore[arg-type]
-            (
-                (TaskORM.due_date.is_(None))  # type: ignore[union-attr]
-                | (
-                    (TaskORM.due_date >= today_start)  # type: ignore[operator]
-                    & (TaskORM.due_date <= today_end)  # type: ignore[operator]
-                )
-            ),
+            TaskORM.user_id == user_id,
+            or_(
+                # 1. Tasks due today
+                func.date(TaskORM.due_date) == target_date,
+                # 2. Overdue tasks (due in past and not completed)
+                and_(
+                    func.date(TaskORM.due_date) < target_date,
+                    TaskORM.status != TaskStatus.COMPLETED
+                ),
+                # 3. Tasks completed today (regardless of due date, even if None)
+                func.date(TaskORM.completed_at) == target_date
+            )
         )
         orm_tasks = self._session.execute(stmt).scalars().all()
-
         return [self._to_domain(orm_task) for orm_task in orm_tasks]
 
     def get_overdue_tasks(self, user_id: int) -> list[DomainTask]:

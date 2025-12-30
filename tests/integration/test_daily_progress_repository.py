@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from faker import Faker
@@ -77,10 +77,10 @@ class TestDailyProgressRepository:
         list_of_progresses  = sample_daily_progresses(5)
         for i, progress in enumerate(list_of_progresses):
             progress.user_id = user_id
-            progress.date = base_date.replace(day=base_date.day + i)
+            progress.date = base_date + timedelta(days=i)
             daily_progress_repository.create_or_update_progress(progress)
         start_date = base_date
-        end_date = base_date.replace(day=base_date.day + 4)
+        end_date = base_date + timedelta(days=4)
         progresses = daily_progress_repository.get_date_range(
             user_id=user_id,
             start_date=start_date,

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from loguru import logger
 
@@ -67,27 +67,49 @@ class ProgressTracker:
             If user has 10 tasks today and completed 7:
             Result: 70.0
         """
+        today = datetime.now(timezone.utc).date()
+        progress = self.get_daily_progress(user_id, today)
+        return progress.completion_percentage
 
-        logger.debug("Calculating daily progression", user_id=user_id)
+    def get_daily_progress(self, user_id: int, target_date: date) -> DailyProgress:
+        """Calculate daily progress for a specific date.
 
-        today_tasks = self._task_repository.get_tasks_for_today(user_id)
-        if not today_tasks:
-            logger.debug("No tasks for today", user_id=user_id)
-            return 0.0
-        completed = sum(1 for task in today_tasks if task.is_completed())
-        total = len(today_tasks)
+        Args:
+            user_id: ID of the user
+            target_date: Date to calculate progress for
 
-        percentage = self._calculate_percent(completed, total)
+        Returns:
+            DailyProgress entity with calculated values
+        """
+        logger.debug(f"Calculating daily progress for user {user_id} on {target_date}")
 
-        logger.info(
-            "Daily progression calculated",
+        # Fetch tasks for the specific date
+        today_tasks = self._task_repository.get_tasks_for_today(user_id, target_date)
+        
+        tasks_completed = sum(1 for t in today_tasks if t.is_completed())
+        tasks_total = len(today_tasks)
+        completion_percentage = self._calculate_percent(tasks_completed, tasks_total)
+        daily_xp_earned = sum(self._gamification.calculate_xp(t) for t in today_tasks if t.is_completed())
+
+        progress = DailyProgress(
             user_id=user_id,
-            completed=completed,
-            total=total,
-            percentage=percentage,
+            date=target_date,
+            tasks_completed=tasks_completed,
+            tasks_total=tasks_total,
+            completion_percentage=completion_percentage,
+            daily_xp_earned=daily_xp_earned,
         )
 
-        return percentage
+        logger.info(
+            "Daily progress calculated",
+            user_id=user_id,
+            date=target_date,
+            completed=tasks_completed,
+            total=tasks_total,
+            percentage=completion_percentage,
+        )
+
+        return progress
 
     def calculate_overall_progression(self, user_id: int) -> float:
         """Calculate level progression percentage for user.
@@ -146,7 +168,7 @@ class ProgressTracker:
         Returns:
             List of DailyProgress entries, most recent first
         """
-        end_date = date.today()
+        end_date = datetime.now(timezone.utc).date()
         start_date = end_date - timedelta(days=limit)
 
         return self._daily_progress_repository.get_date_range(
@@ -175,7 +197,7 @@ class ProgressTracker:
             Result: 3 (today + 2 previous days)
         """
         streak = 0
-        current_date = date.today()
+        current_date = datetime.now(timezone.utc).date()
 
         for _ in range(365):
             progress = self._daily_progress_repository.get_progress_by_date(

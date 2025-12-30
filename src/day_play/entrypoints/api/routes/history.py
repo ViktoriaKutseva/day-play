@@ -2,7 +2,7 @@
 # - GET /api/history/{date} - Get specific day detail with completed tasks
 # - Pagination support for large date ranges
 # - Efficient date-based queries
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
 
@@ -38,7 +38,7 @@ def get_history(
     Returns:
         History response with daily progress entries and aggregated stats
     """
-    end_date = date.today()
+    end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=days - 1)
 
     progress_entries = progress_tracker.get_simple_history(user_id, limit=days)

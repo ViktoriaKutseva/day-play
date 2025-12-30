@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 
 import pytest
 
@@ -78,6 +78,7 @@ def task_manager(
     recurrence_engine: RecurrenceEngine,
     achievement_manager: AchievementManager,
     mock_daily_progress_repository: Mock,
+    mock_progress_tracker: Mock,
 ) -> TaskManager:
     return TaskManager(
         task_repository=mock_task_repository,
@@ -86,6 +87,7 @@ def task_manager(
         recurrence=recurrence_engine,
         achievement_manager=achievement_manager,
         daily_progress_repository=mock_daily_progress_repository,
+        progress_tracker=mock_progress_tracker,
     )
 
 
@@ -528,8 +530,9 @@ class TestTaskManagerUndoTask:
         )
         # User at level 2 with 100 XP, will drop to level 1 after losing 50 XP
         user = User(id=1, username="testuser", current_level=2, total_xp=100)
-        updated_user = user.model_copy(update={"total_xp": 50})
+        updated_user = user.model_copy(update={"total_xp": 50, "current_level": 2})
 
+        mock_user_repository.get_by_id.return_value = user
         mock_task_repository.get_task_by_id.return_value = completed_task
         mock_task_repository.update_task.return_value = completed_task.model_copy(
             update={"status": TaskStatus.PENDING, "completed_at": None}
@@ -682,7 +685,7 @@ class TestTaskManagerGetTasksForToday:
 
         assert len(result) == 3
         assert result == today_tasks
-        mock_task_repository.get_tasks_for_today.assert_called_once_with(1)
+        mock_task_repository.get_tasks_for_today.assert_called_once_with(1, ANY)
 
     def test_get_tasks_for_today_empty(
         self, task_manager, mock_task_repository, mock_user_repository
@@ -694,11 +697,7 @@ class TestTaskManagerGetTasksForToday:
 
         assert len(result) == 0
         assert result == []
-        mock_task_repository.get_tasks_for_today.assert_called_once_with(1)
-
-
-class TestTaskManagerRepositoryExceptions:
-    """Repository exception propagation tests for TaskManager public methods."""
+        mock_task_repository.get_tasks_for_today.assert_called_once_with(1, ANY)
 
     def test_create_task_repository_exception_propagates(self, task_manager, mock_task_repository, sample_task):
         mock_task_repository.create_task.side_effect = Exception("Database error")

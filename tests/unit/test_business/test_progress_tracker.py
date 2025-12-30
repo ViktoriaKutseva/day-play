@@ -1,6 +1,6 @@
 import random
 from datetime import UTC, datetime, timezone, date, timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 
 import pytest
 from faker import Faker
@@ -111,7 +111,7 @@ class TestProgressTracker:
 
         assert result == 0.0
 
-        mock_task_repository.get_tasks_for_today.assert_called_once_with(1)
+        mock_task_repository.get_tasks_for_today.assert_called_once_with(1, ANY)
 
     def test_daily_progression_with_partial_completion(self, progress_tracker,mock_task_repository):
 
