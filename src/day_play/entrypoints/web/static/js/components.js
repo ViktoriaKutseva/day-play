@@ -8,7 +8,7 @@ function taskFormComponent(mode = 'create', existingTask = null) {
       description: existingTask?.description || '',
       priority: existingTask?.priority || 'medium',
       urgency: existingTask?.urgency || 'medium',
-      due_date: existingTask?.due_date || null,
+      due_date: existingTask?.due_date || (mode === 'create' ? new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : null),
       recurrence_pattern: existingTask?.recurrence_pattern || 'none',
       recurrence_rule_on_complete: existingTask?.recurrence_rule_on_complete || false,
       custom_xp: existingTask?.custom_xp || null

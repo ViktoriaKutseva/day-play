@@ -1,8 +1,5 @@
 
 function dashboardComponent() {
-  // Keep existing dashboardComponent code (lines 645-738)
-}
-function dashboardComponent() {
   return {
     // State
     loading: true,
@@ -14,8 +11,6 @@ function dashboardComponent() {
     nextLevelXP: 100,
     tasks: [],
     achievements: [],
-    newTaskTitle: '',
-    taskAdded: false,
     showCreateModal: false,
     
     // Initialize - runs when component loads
@@ -48,46 +43,42 @@ function dashboardComponent() {
         this.loading = false;
       }
     },
-    
-    // Add new task
-    async addTask() {
-      if (!this.newTaskTitle.trim()) return;
-      
+
+    closeModal() {
+      this.showCreateModal = false;
+    },
+
+    async completeTask(taskId) {
       try {
-        this.loading = true;
-        
-        const response = await fetch('/api/tasks', {
+        const response = await fetch(`/api/tasks/${taskId}/complete`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: this.newTaskTitle,
-            priority: 'medium',
-            urgency: 'medium',
-            status: 'pending'
-          })
+          headers: { 'Content-Type': 'application/json' }
         });
         
-        if (!response.ok) throw new Error('Failed to create task');
+        if (!response.ok) throw new Error('Failed to complete task');
         
-        const newTask = await response.json();
-        this.tasks.push(newTask);
-        this.newTaskTitle = '';
-        this.taskAdded = true;
-        this.showCreateModal = false;
-        
-        setTimeout(() => { 
-          this.taskAdded = false; 
-        }, 3000);
-        
-        // Reload dashboard to refresh progress
+        // Refresh dashboard to update progress and level
         await this.init();
-        
       } catch (error) {
-        console.error('Failed to add task:', error);
-        this.error = 'Failed to add task. Please try again.';
-        this.loading = false;
+        console.error('Failed to complete task:', error);
+        this.error = 'Failed to complete task. Please try again.';
+      }
+    },
+
+    async undoTask(taskId) {
+      try {
+        const response = await fetch(`/api/tasks/${taskId}/undo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error('Failed to undo task');
+        
+        // Refresh dashboard to update progress and level
+        await this.init();
+      } catch (error) {
+        console.error('Failed to undo task:', error);
+        this.error = 'Failed to undo task. Please try again.';
       }
     }
   }
