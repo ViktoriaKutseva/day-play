@@ -18,10 +18,13 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "faker>=38.2.0",
     "jinja2>=3.1.6",
+    "playwright>=1.57.0",
+    "pytest>=8.4.2",
 ]
 
 [dependency-groups]
 dev = [
+    "allure-pytest>=2.15.3",
     "playwright>=1.57.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=0.21.0",
