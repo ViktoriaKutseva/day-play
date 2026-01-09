@@ -87,63 +87,6 @@ class TaskRepository(Protocol):
             List of tasks matching the given status for the user
         """
         ...
-class DailyProgressRepository(Protocol):
-    def create_or_update_progress(self, progress: DailyProgress) -> DailyProgress:
-        """Create or update daily progress for a user.
-        Args:
-            progress: DailyProgress entity to create or update
-        Returns:
-            Created or updated DailyProgress
-        """
-        ...
-    def get_progress_by_date(self, user_id: int, date_progress: date) -> DailyProgress | None:
-        """Retrieve daily progress for a user by date.
-        Args:
-            user_id: ID of the user
-            date_progress: Date of the progress to retrieve
-        Returns:
-            DailyProgress for the given user and date, or None if not found
-        """
-        ...
-    def get_date_range(self, user_id: int, start_date: date, end_date: date) -> list[DailyProgress]:
-        """Retrieve daily progress for a user within a date range.
-        Args:
-            user_id: ID of the user
-            start_date: Start date of the range
-            end_date: End date of the range
-        Returns:
-            List of DailyProgress entries for the given user within the date range
-        """
-        ...
-
-# class AllProgressRepository(Protocol):
-#     """Interface for progress data access operations."""
-
-#     def create(self, progress: DailyProgress) -> DailyProgress:
-#         """Create a new progress entry."""
-#         ...
-
-#     def get_by_id(self, progress_id: int) -> DailyProgress | None:
-#         """Get progress by ID."""
-#         ...
-
-#     def get_by_user_id_and_date(self, user_id: int, progress_date: date) -> DailyProgress | None:
-#         """
-#         Get progress for a user on a specific date.
-
-#         Args:
-#             user_id: User's unique identifier
-#             progress_date: Date of the progress entry
-
-#         Returns:
-#             DailyProgress entry or None if not found
-#         """
-#         ...
-
-#     def update(self, progress: DailyProgress) -> DailyProgress:
-#         """Update existing daily progress entry."""
-#         ...
-
 class UserRepository(Protocol):
     """Interface for user data access operations."""
 
