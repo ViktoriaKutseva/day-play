@@ -14,19 +14,17 @@ class Task(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
-    priority: Priority = Field(default=Priority.LOW)
-    urgency: Urgency = Field(default=Urgency.LOW)
     status: TaskStatus = Field(default=TaskStatus.PENDING, index=True)
     due_date: datetime | None = Field(default=None)
     recurrence_pattern: RecurrencePattern = Field(default=RecurrencePattern.NONE)
     next_occurrence: datetime | None = Field(default=None)
+    tags: list | None = Field(default = None, foreign_key="tag.id", index=True)
     custom_xp: int | None = Field(default=None)
     recurrence_rule_on_complete: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: datetime | None = Field(default=None)
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-
     @field_validator("title")
     @classmethod
     def validate_title(cls, value: str) -> str:
@@ -43,17 +41,6 @@ class User(SQLModel, table=True):
     total_xp: int = Field(default=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class DailyProgress(SQLModel, table=True):
-    __tablename__ = "daily_progress"
-
-    id: int | None = Field(default=None, primary_key=True)
-    date: date_type = Field(default_factory=date_type.today, index=True)
-    tasks_completed: int = Field(default=0)
-    tasks_total: int = Field(default=0)
-    completion_percentage: float = Field(default=0.0)
-    daily_xp_earned: int = Field(default=0)
-    user_id: int = Field(foreign_key="user.id", index=True)
 
 class Achievement(SQLModel, table=True):
     __tablename__ = "achievement"
@@ -78,3 +65,10 @@ class Prize(SQLModel, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Tag(SQLModel, table=True):
+    __tablename__ = "tags"
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(..., min_length=1, max_length=50)
+    color: str = Field(default="#4B9441")
+    user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
