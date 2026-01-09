@@ -8,6 +8,10 @@ class BasePage:
     def navigate(self, url: str):
         self.page.goto(url)
 
+    def navigate_to(self, url: str):
+        """Alias for navigate to match example style."""
+        self.navigate(url)
+
     def get_url(self) -> str:
         return self.page.url
     
