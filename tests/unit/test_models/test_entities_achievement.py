@@ -1,10 +1,9 @@
-from datetime import date, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
 
-from day_play.models.entities import Achievement, DailyProgress, Prize, Task, User
-from day_play.models.enums import Priority, RecurrencePattern, TaskStatus, Urgency
+from day_play.models.entities import Achievement
+
 
 class TestAchievement:
     def test_valid_achievement_creation(self):

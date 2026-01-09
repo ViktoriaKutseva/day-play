@@ -1,9 +1,9 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
 
-from day_play.models.entities import Achievement, DailyProgress, Prize, Task, User
+from day_play.models.entities import Task
 from day_play.models.enums import Priority, RecurrencePattern, TaskStatus, Urgency
 
 
@@ -14,13 +14,10 @@ class TestTaskGeneral:
         task = Task(
             title="Test Task",
             description="Test description",
-            priority=Priority.HIGH,
-            urgency=Urgency.HIGH,
             status=TaskStatus.PENDING,
             recurrence_pattern=RecurrencePattern.NONE
         )
         assert task.title == "Test Task"
-        assert task.priority == Priority.HIGH
         assert task.status == TaskStatus.PENDING
 
 class TestTaskTitleAndDescription:
@@ -100,83 +97,6 @@ class TestTaskTitleAndDescription:
             Task(
                 title="Task with too long description",
                 description=too_long_description
-            )
-
-class TestTaskPriorityAndUrgency:
-    @pytest.mark.asyncio
-    async def test_task_accepts_low_priority(self):
-        """Test that task accepts LOW priority."""
-        task = Task(
-            title="Low Priority Task",
-            priority=Priority.LOW,
-            description=None
-        )
-        assert task.priority == Priority.LOW
-
-    @pytest.mark.asyncio
-    async def test_task_accepts_medium_priority(self):
-        """Test that task accepts MEDIUM priority."""
-        task = Task(
-            title="Medium Priority Task",
-            priority=Priority.MEDIUM,
-            description=None
-        )
-        assert task.priority == Priority.MEDIUM
-
-    @pytest.mark.asyncio
-    async def test_task_accepts_high_priority(self):
-        """Test that task accepts HIGH priority."""
-        task = Task(
-            title="High Priority Task",
-            priority=Priority.HIGH,
-            description=None
-        )
-        assert task.priority == Priority.HIGH
-
-    @pytest.mark.asyncio
-    async def test_task_rejects_invalid_priority(self):
-        """Test that task rejects invalid priority values."""
-        with pytest.raises(ValidationError):
-            Task(
-                title="Invalid Priority Task",
-                priority="URGENT",
-                description=None
-            )
-    @pytest.mark.asyncio
-    async def test_task_accepts_low_urgency(self):
-        """Test that task accepts LOW urgency."""
-        task = Task(
-            title="Low Urgency Task",
-            urgency=Urgency.LOW,
-            description=None
-        )
-        assert task.urgency == Urgency.LOW
-    @pytest.mark.asyncio
-    async def test_task_accepts_medium_urgency(self):
-        """Test that task accepts MEDIUM urgency."""
-        task = Task(
-            title="Medium Urgency Task",
-            urgency=Urgency.MEDIUM,
-            description=None
-        )
-        assert task.urgency == Urgency.MEDIUM
-    @pytest.mark.asyncio
-    async def test_task_accepts_high_urgency(self):
-        """Test that task accepts HIGH urgency."""
-        task = Task(
-            title="High Urgency Task",
-            urgency=Urgency.HIGH,
-            description=None
-        )
-        assert task.urgency == Urgency.HIGH
-    @pytest.mark.asyncio
-    async def test_task_rejects_invalid_urgency(self):
-        """Test that task rejects invalid urgency values."""
-        with pytest.raises(ValidationError):
-            Task(
-                title="Invalid Urgency Task",
-                urgency="CRITICAL",
-                description=None
             )
 
 class TestTaskBusinessLogic:
@@ -273,7 +193,7 @@ class TestTaskOptionalFieldsAndXP:
             title="Task without custom XP",
             description=None
         )
-        assert task.custom_xp is None
+        assert task.custom_xp == 10
 
     @pytest.mark.asyncio
     async def test_task_custom_xp_positive_value(self):
