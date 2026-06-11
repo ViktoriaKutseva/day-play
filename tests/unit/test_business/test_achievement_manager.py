@@ -24,12 +24,6 @@ def mock_user_repository() -> Mock:
 
 
 @pytest.fixture
-def mock_daily_progress_repository() -> Mock:
-    """Mock DailyProgressRepository for testing."""
-    return Mock()
-
-
-@pytest.fixture
 def mock_achievement_repository() -> Mock:
     """Mock AchievementRepository for testing."""
     return Mock()
@@ -51,7 +45,6 @@ def gamification_engine() -> GamificationEngine:
 def achievement_manager(
     mock_task_repository: Mock,
     mock_user_repository: Mock,
-    mock_daily_progress_repository: Mock,
     mock_achievement_repository: Mock,
     mock_progress_tracker: Mock,
     gamification_engine: GamificationEngine,
@@ -61,7 +54,6 @@ def achievement_manager(
         gamification=gamification_engine,
         task_repository=mock_task_repository,
         user_repository=mock_user_repository,
-        daily_progress_repository=mock_daily_progress_repository,
         achievement_repository=mock_achievement_repository,
         progress_tracker=mock_progress_tracker,
     )

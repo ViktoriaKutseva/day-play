@@ -27,7 +27,7 @@ class TestPrize:
             )
     def test_prize_name_exceeds_max_length(self):
         """Test prize name maximum length validation."""
-        long_name = "a" * 256  # Exceeds max_length=100
+        long_name = "a" * 256
         with pytest.raises(ValidationError):
             Prize(
                 name=long_name,
@@ -44,7 +44,7 @@ class TestPrize:
             )
     def test_prize_description_exceeds_max_length(self):
         """Test prize description maximum length validation."""
-        long_description = "a" * 501  # Exceeds max_length=500
+        long_description = "a" * 501
         with pytest.raises(ValidationError):
             Prize(
                 name="Lunch",
@@ -53,7 +53,7 @@ class TestPrize:
             )
     def test_prize_name_min_length(self):
         """Test prize name minimum length validation."""
-        min_length_name = "A"  # Minimum length is 1
+        min_length_name = "A"
         prize = Prize(
             name=min_length_name,
             description=None,

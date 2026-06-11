@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Protocol
 
-from day_play.models.entities import Achievement, DailyProgress, Prize, Task, User
+from day_play.models.entities import Achievement, Prize, Task, User
 from day_play.models.enums import TaskStatus
 
 

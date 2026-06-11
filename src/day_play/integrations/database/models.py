@@ -18,7 +18,7 @@ class Task(SQLModel, table=True):
     due_date: datetime | None = Field(default=None)
     recurrence_pattern: RecurrencePattern = Field(default=RecurrencePattern.NONE)
     next_occurrence: datetime | None = Field(default=None)
-    tags: list | None = Field(default = None, foreign_key="tag.id", index=True)
+    tags: list[str] | None = Field(default=None, sa_column=Column(JSON))
     custom_xp: int | None = Field(default=None)
     recurrence_rule_on_complete: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -6,7 +6,6 @@ from loguru import logger
 from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.interfaces import (
     AchievementRepository,
-    DailyProgressRepository,
     TaskRepository,
     UserRepository,
 )
@@ -62,7 +61,6 @@ class AchievementManager:
             self, gamification: GamificationEngine,
             task_repository: TaskRepository,
             user_repository: UserRepository,
-            daily_progress_repository: DailyProgressRepository,
             achievement_repository: AchievementRepository,
             progress_tracker: ProgressTracker,
 
@@ -73,13 +71,11 @@ class AchievementManager:
             gamification: Engine for XP/level calculations
             task_repository: Repository for task data access
             user_repository: Repository for user data access
-            daily_progress_repository: Repository for daily progress data access
             achievement_repository: Repository for achievement data access
         """
         self._gamification = gamification
         self._task_repository = task_repository
         self._user_repository = user_repository
-        self._daily_progress_repository = daily_progress_repository
         self._achievement_repository = achievement_repository
         self._progress_tracker = progress_tracker
 

@@ -1,14 +1,14 @@
 import random
-from datetime import UTC, datetime, timezone, date, timedelta
-from unittest.mock import Mock, ANY
+from datetime import UTC, datetime
+from unittest.mock import Mock
 
 import pytest
 from faker import Faker
 
 from day_play.business.gamification_engine import GamificationEngine
 from day_play.business.progress_tracker import ProgressTracker
-from day_play.models.entities import Task, User, DailyProgress
-from day_play.models.enums import Priority, TaskStatus, Urgency
+from day_play.models.entities import Task, User
+from day_play.models.enums import TaskStatus
 
 
 @pytest.fixture
@@ -46,7 +46,6 @@ def progress_tracker(
     return ProgressTracker(
         task_repository=mock_task_repository,
         user_repository=mock_user_repository,
-        daily_progress_repository=mock_daily_progress_repository,
         gamification=gamification_engine
     )
 
@@ -69,70 +68,15 @@ def sample_tasks(number: int = 1):
         task = Task(
             title=fake.name_female(),
             description=fake.name_male(),
-            priority=random.choice(list(Priority)),
-            urgency=random.choice(list(Urgency)),
             status=random.choice(list(TaskStatus)),
             user_id=1,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),)
         tasks.append(task)
     return tasks
-@pytest.fixture
-def sample_progress():
 
-    today = date.today()
-    sample_progress = [
-        DailyProgress(
-            user_id=1,
-            date=today,
-            tasks_completed=5,
-            tasks_total=10,
-            daily_xp_earned=50,
-            completion_percentage=50.0
-        ),
-        DailyProgress(
-            user_id=1,
-            date=today - timedelta(days=1),
-            tasks_completed=8,
-            tasks_total=10,
-            daily_xp_earned=80,
-            completion_percentage=80.0
-        ),
-    ]
-    return sample_progress
 
 class TestProgressTracker:
-    def test_daily_progression_with_no_tasks(
-        self, progress_tracker, mock_task_repository):
-
-        mock_task_repository.get_tasks_for_today.return_value = []
-
-        result = progress_tracker.calculate_daily_progression(user_id=1)
-
-        assert result == 0.0
-
-        mock_task_repository.get_tasks_for_today.assert_called_once_with(1, ANY)
-
-    def test_daily_progression_with_partial_completion(self, progress_tracker,mock_task_repository):
-
-        tasks = sample_tasks(4)
-        for task in tasks[:2]:
-            task.status = TaskStatus.COMPLETED
-        for task in tasks[2:]:
-            task.status = TaskStatus.PENDING
-        print(tasks)
-        mock_task_repository.get_tasks_for_today.return_value = tasks
-        result = progress_tracker.calculate_daily_progression(user_id=1)
-        assert result == 50.0
-
-    def test_daily_progression_with_full_completion(self, progress_tracker,mock_task_repository):
-
-        tasks = sample_tasks(5)
-        for task in tasks:
-            task.status = TaskStatus.COMPLETED
-        mock_task_repository.get_tasks_for_today.return_value = tasks
-        result = progress_tracker.calculate_daily_progression(user_id=1)
-        assert result == 100.0
     def test_calculate_overall_progression_first_level_zero_xp(
         self, progress_tracker, mock_user_repository, sample_user
     ):
@@ -178,95 +122,7 @@ class TestProgressTracker:
 
         assert result == 50.0
 
-    def test_get_simple_history_returns_progress_entries(
-        self, progress_tracker, mock_daily_progress_repository, sample_progress
-    ):
-        mock_daily_progress_repository.get_date_range.return_value = sample_progress
-        result = progress_tracker.get_simple_history(user_id=1, limit=30)
-
-        assert result == sample_progress
-        assert len(result) == 2
-        expected_end_date = date.today()
-        expected_start_date = expected_end_date - timedelta(days=30)
-        mock_daily_progress_repository.get_date_range.assert_called_once_with(
-            1, expected_start_date, expected_end_date
-        )
-
-    def test_get_simple_history_with_custom_limit(
-        self, progress_tracker, mock_daily_progress_repository
-    ):
-        """Test that get_simple_history respects custom limit parameter."""
-        mock_daily_progress_repository.get_date_range.return_value = []
-
-        progress_tracker.get_simple_history(user_id=1, limit=7)
-
-        expected_end_date = date.today()
-        expected_start_date = expected_end_date - timedelta(days=7)
-        mock_daily_progress_repository.get_date_range.assert_called_once_with(
-            1, expected_start_date, expected_end_date
-        )
-
-    def test_get_simple_history_with_empty_result(
-        self, progress_tracker, mock_daily_progress_repository
-    ):
-        """Test that get_simple_history handles empty result correctly."""
-
-        mock_daily_progress_repository.get_date_range.return_value = []
-
-        result = progress_tracker.get_simple_history(user_id=1)
-        assert result == []
-        assert len(result) == 0
-
-    # ----------------- Additional edge-case tests -----------------
     def test_calculate_overall_progression_user_not_found_returns_zero(self, progress_tracker, mock_user_repository):
         mock_user_repository.get_by_id.return_value = None
         result = progress_tracker.calculate_overall_progression(user_id=1)
         assert result == 0.0
-
-    def test_calculate_daily_streak_no_progress_returns_zero(self, progress_tracker, mock_daily_progress_repository):
-        mock_daily_progress_repository.get_progress_by_date.return_value = None
-        result = progress_tracker.calculate_daily_streak(user_id=1)
-        assert result == 0
-
-    def test_calculate_daily_streak_breaks_at_gap(self, progress_tracker, mock_daily_progress_repository):
-        today = date.today()
-        progress_data = [
-            DailyProgress(user_id=1, date=today, tasks_completed=5, tasks_total=5, daily_xp_earned=50, completion_percentage=100.0),
-            DailyProgress(user_id=1, date=today - timedelta(days=1), tasks_completed=3, tasks_total=5, daily_xp_earned=30, completion_percentage=60.0),
-            # gap day: no entry for today-2
-            DailyProgress(user_id=1, date=today - timedelta(days=3), tasks_completed=4, tasks_total=5, daily_xp_earned=40, completion_percentage=80.0),
-        ]
-
-        def get_progress_side_effect(user_id, check_date):
-            return next((p for p in progress_data if p.date == check_date), None)
-
-        mock_daily_progress_repository.get_progress_by_date.side_effect = get_progress_side_effect
-        result = progress_tracker.calculate_daily_streak(user_id=1)
-        assert result == 2
-
-    def test_calculate_daily_streak_breaks_at_zero_completion(self, progress_tracker, mock_daily_progress_repository):
-        today = date.today()
-        progress_data = [
-            DailyProgress(user_id=1, date=today, tasks_completed=5, tasks_total=5, daily_xp_earned=50, completion_percentage=100.0),
-            DailyProgress(user_id=1, date=today - timedelta(days=1), tasks_completed=0, tasks_total=5, daily_xp_earned=0, completion_percentage=0.0),
-        ]
-
-        def get_progress_side_effect(user_id, check_date):
-            return next((p for p in progress_data if p.date == check_date), None)
-
-        mock_daily_progress_repository.get_progress_by_date.side_effect = get_progress_side_effect
-        result = progress_tracker.calculate_daily_streak(user_id=1)
-        assert result == 1
-
-    def test_calculate_daily_streak_old_tasks_dont_count(self, progress_tracker, mock_daily_progress_repository):
-        today = date.today()
-        progress_data = [
-            DailyProgress(user_id=1, date=today - timedelta(days=30), tasks_completed=5, tasks_total=5, daily_xp_earned=50, completion_percentage=100.0),
-        ]
-
-        def get_progress_side_effect(user_id, check_date):
-            return next((p for p in progress_data if p.date == check_date), None)
-
-        mock_daily_progress_repository.get_progress_by_date.side_effect = get_progress_side_effect
-        result = progress_tracker.calculate_daily_streak(user_id=1)
-        assert result == 0
