@@ -8,4 +8,22 @@ dependencies = [
     "fastapi>=0.118.2",
     "sqlmodel>=0.0.27",
     "uvicorn>=0.37.0",
+    "pydantic-settings>=2.6.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "httpx>=0.27.0",
+    "ruff>=0.7.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# Generic[T] kept over PEP 695 type params for the pydantic Response wrapper (UP046):
+# more portable across pydantic/FastAPI versions and matches FastAPI's documented pattern.
+ignore = ["UP046"]

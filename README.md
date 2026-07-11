@@ -25,11 +25,20 @@ This project combines task management with gamification elements while serving a
 ## API Endpoints
 
 - `GET /` - Welcome message
-- `GET /tasks` - Retrieve all tasks
+- `GET /tasks` - Retrieve tasks (supports `limit`/`offset` pagination)
 - `GET /tasks/{task_id}` - Retrieve a specific task
 - `POST /tasks` - Create a new task
-- `PUT /tasks/{task_id}` - Update an existing task
+- `PUT /tasks/{task_id}` - Replace an existing task
+- `PATCH /tasks/{task_id}` - Partially update an existing task
 - `DELETE /tasks/{task_id}` - Delete a task
+
+## Configuration
+
+Settings are managed via `pydantic-settings` (see `config.py`) and can be overridden with a `.env` file or `DAYPLAY_`-prefixed environment variables:
+
+- `DAYPLAY_SQLITE_NAME` - SQLite database filename (default: `database.db`)
+- `DAYPLAY_DEBUG` - enable SQL echo logging (default: `false`)
+- `DAYPLAY_ROOT_PATH` - API root path (default: `/api/v1`)
 
 ## Getting Started
 
@@ -44,6 +53,18 @@ This project combines task management with gamification elements while serving a
    ```
 
 3. Visit `http://localhost:8000/docs` for interactive API documentation
+
+## Development
+
+Run tests:
+```bash
+uv run pytest
+```
+
+Run the linter:
+```bash
+uv run ruff check .
+```
 
 ## Learning Goals
 
